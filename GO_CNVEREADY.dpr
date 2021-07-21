@@ -1,5 +1,5 @@
 //
-//  Versione 10.11
+//  Versione 11.01.02
 //
 program GO_CNVEREADY;
 
@@ -7,23 +7,24 @@ program GO_CNVEREADY;
 
 
 
-{$R 'ZZVERSIONE_GO_EXE.res' '..\..\..\go_1011\src\ZZVERSIONE_GO_EXE.rc'}
+
 
 uses
-  madExcept,
   Forms,
-  ZZACCESSO in '..\..\..\go_1011\src\ZZACCESSO.pas',
-  DMARC in '..\..\..\go_1011\src\DMARC.pas' {ARC: TDataModule},
-  GGLOGIN in '..\..\..\go_1011\src\GGLOGIN.pas' {LOGIN},
-  GGBASE in '..\..\..\go_1011\src\GGBASE.pas' {BASE},
-  GGFORMBASE in '..\..\..\go_1011\src\GGFORMBASE.pas' {FORMBASE},
-  GGELABORA in '..\..\..\go_1011\src\GGELABORA.pas' {ELABORA},
-  GGSTAMPA in '..\..\..\go_1011\src\GGSTAMPA.pas' {STAMPA},
+  ZZACCESSO in '..\..\..\go_1100\src\ZZACCESSO.pas',
+  DMARC in 'DMARC.pas' {ARC: TDataModule},
+  GGLOGIN in '..\..\..\go_1100\src\GGLOGIN.pas' {LOGIN},
+  GGBASE in '..\..\..\go_1100\src\GGBASE.pas' {BASE},
+  GGFORMBASE in '..\..\..\go_1100\src\GGFORMBASE.pas' {FORMBASE},
+  GGGESARC in '..\..\..\go_1100\src\GGGESARC.pas' {GESARC},
+  GGELABORA in '..\..\..\go_1100\src\GGELABORA.pas' {ELABORA},
+  GGSTAMPA in '..\..\..\go_1100\src\GGSTAMPA.pas' {STAMPA},
+  GGMAIL in '..\..\..\go_1100\src\GGMAIL.pas' {MAIL},
+  ZZARROTONDAMENTO in '..\..\..\go_1100\src\ZZARROTONDAMENTO.pas',
   DMCLOUD in 'DMCLOUD.pas' {CLOUD: TDataModule},
   FRMDITTA in 'FRMDITTA.pas' {DITTA: TFrame},
   GGMENU in 'GGMENU.pas' {MENUGG},
-  GGCONVEREADY in 'GGCONVEREADY.pas' {CONVEREADY},
-  ZZARROTONDAMENTO in '..\..\..\go_1011\src\ZZARROTONDAMENTO.pas';
+  GGCONVEREADY in 'GGCONVEREADY.pas' {CONVEREADY};
 
 {$r *.res}
 

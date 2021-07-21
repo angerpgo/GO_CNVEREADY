@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, DateUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, GGELABORA, Grids, dbgrids, RzDBGrid, ADODB, DB, MyAccess, query_go,
+  Vcl.Dialogs, GGELABORA, Grids, dbgrids, RzDBGrid, ADODB, DB, MyAccess, query_go,
   Menus, StdCtrls, Buttons, ComCtrls, RzTabs, ExtCtrls,
   ToolWin, Mask, MemDS, VirtualTable,
 
@@ -27,7 +27,7 @@ type
     v_clienti: TRzcheckbox;
     v_fornitori: TRzcheckbox;
     v_articoli: TRzcheckbox;
-    v_sedi_amministrative: TRzCheckBox;
+    v_sedi_amministrative: TRzcheckbox;
     v_lsv: TRzcheckbox;
     v_pnt: TRzcheckbox;
     v_scadenze: TRzcheckbox;
@@ -57,11 +57,11 @@ type
     DBGrid1: TDBGrid;
     v_tma_codice: TRzEdit;
     Label1: TLabel;
-    taq: TMyTable;
-    v_pni: TRzCheckBox;
-    v_fatture_vendita: TRzCheckBox;
-    v_tdo: TRzCheckBox;
-    v_nml: TRzCheckBox;
+    taq: tmytable;
+    v_pni: TRzcheckbox;
+    v_fatture_vendita: TRzcheckbox;
+    v_tdo: TRzcheckbox;
+    v_nml: TRzcheckbox;
     procedure v_confermaClick(Sender: TObject);
     procedure tabella_02BeforePost(DataSet: TDataSet);
     procedure tabella_03BeforePost(DataSet: TDataSet);
@@ -137,10 +137,10 @@ type
 
     procedure converti_ordini_clienti;
     procedure crea_ovt;
-    procedure crea_ovr(serie_documento, numero_documento: string);
+    procedure crea_ovr(progressivo: integer);
     procedure converti_ordini_fornitori;
     procedure crea_oat;
-    procedure crea_oar(serie_documento, numero_documento: string);
+    procedure crea_oar(progressivo: integer);
     procedure converti_fatture_vendita;
     procedure crea_fvt;
     procedure crea_fvi;
@@ -163,8 +163,7 @@ var
 
 implementation
 
-{$r *.dfm}
-
+{$R *.dfm}
 
 uses DMARC;
 
@@ -192,7 +191,7 @@ begin
     end;
 
     end;
-  *)
+ *)
   if v_tabelle.checked then
   begin
     converti_tva;
@@ -294,8 +293,7 @@ begin
 
   if v_ordini.checked then
   begin
-    // converti_ordini_clienti;
-
+    converti_ordini_clienti;
     // converti_ordini_fornitori;
   end;
 
@@ -319,7 +317,7 @@ begin
   end;
 
   v_conferma.enabled := true;
-  close;
+  Close;
 end;
 
 procedure TCONVEREADY.converti_clienti;
@@ -339,7 +337,7 @@ begin
   read_tabella(arc.arc, 'dit', 'codice', ditta, '*');
 
   cancella_tabella('cli');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'cli';
   tabella_01.open;
 
@@ -359,7 +357,7 @@ begin
   tabella_clifor.open;
   while not tabella_clifor.eof do
   begin
-    Application.processMessages;
+    application.processmessages;
     // ------------------------------------
     // CERCO CODICE IN TABELLA CLIENTI-FORNITORI
     // ------------------------------------
@@ -368,19 +366,12 @@ begin
     begin
       if (codice_nom_numerico = 'si') and (v_codifica_clienti.checked) then
       begin
-        assegna_codice_cli(tabella_clifor.fieldbyname('cod_anagra').asstring, cli_for);
+        progressivo := progressivo + 1;
+        cli_for := setta_lunghezza(progressivo, 8, 0);
       end
       else
       begin
-     IF (v_codifica_clienti.checked) then
-      begin
         assegna_codice_cli(tabella_clifor.fieldbyname('cod_anagra').asstring, cli_for);
-  end
-else
-begin
-        progressivo := progressivo + 1;
-        cli_for := setta_lunghezza(progressivo, 8, 0);
-end;
       end;
 
       if length(cli_for) > 0 then
@@ -410,8 +401,7 @@ end;
         begin
           tabella_02.fieldbyname('descrizione1').asstring := '.';
         end;
-        tabella_02.fieldbyname('descrizione2').asstring :=
-          trim(copy(tabella_clifor.fieldbyname('des_ragsoc').asstring, j + 1, length(tabella_clifor.fieldbyname('des_ragsoc').asstring) - j));
+        tabella_02.fieldbyname('descrizione2').asstring := trim(copy(tabella_clifor.fieldbyname('des_ragsoc').asstring, j + 1, length(tabella_clifor.fieldbyname('des_ragsoc').asstring) - j));
 
         tabella_02.fieldbyname('via').asstring := trim(tabella_clifor.fieldbyname('des_indir_res').asstring);
         tabella_02.fieldbyname('cap').asstring := trim(tabella_clifor.fieldbyname('cod_cap_res').asstring);
@@ -431,12 +421,12 @@ end;
         tabella_02.fieldbyname('cellulare').asstring := trim(tabella_clifor.fieldbyname('sig_fax1_res').asstring);
         if (tabella_clifor.fieldbyname('flg_pers_fis').asstring = '1') and (tabella_02.fieldbyname('partita_iva').asstring = '') then
         begin
-          tabella_02.fieldbyname('codice_alternativo').asstring := trim(tabella_clifor.fieldbyname('des_ragsoc').asString);
+          tabella_02.fieldbyname('codice_alternativo').asstring := trim(tabella_clifor.fieldbyname('des_ragsoc').asstring);
 
-          if trim(tabella_clifor.fieldbyname('des_cogn').asString) <> '' then
+          if trim(tabella_clifor.fieldbyname('des_cogn').asstring) <> '' then
           begin
-            tabella_02.fieldbyname('descrizione1').asstring := trim(tabella_clifor.fieldbyname('des_cogn').asString);
-            tabella_02.fieldbyname('descrizione2').asstring := trim(tabella_clifor.fieldbyname('des_nome').asString);
+            tabella_02.fieldbyname('descrizione1').asstring := trim(tabella_clifor.fieldbyname('des_cogn').asstring);
+            tabella_02.fieldbyname('descrizione2').asstring := trim(tabella_clifor.fieldbyname('des_nome').asstring);
           end;
 
           tabella_02.fieldbyname('persona_fisica').asstring := 'si';
@@ -462,9 +452,9 @@ end;
           tabella_02.fieldbyname('persona_fisica').asstring := 'no';
         end;
 
-        if trim(tabella_clifor.fieldbyname('cod_valuta').asString) <> '' then
+        if trim(tabella_clifor.fieldbyname('cod_valuta').asstring) <> '' then
         begin
-          tabella_02.fieldbyname('tva_codice').asstring := trim(tabella_clifor.fieldbyname('cod_valuta').asString);
+          tabella_02.fieldbyname('tva_codice').asstring := trim(tabella_clifor.fieldbyname('cod_valuta').asstring);
         end
         else
         begin
@@ -485,6 +475,7 @@ end;
           tabella_02.fieldbyname('tna_codice_legale').asstring := tabella_02.fieldbyname('tna_codice').asstring;
         end;
 
+        tabella_02.fieldbyname('e_mail_pec_fe').asstring :=  tabella_clifor.fieldbyname('des_email_pec_fe').asstring;
         tabella_02.post;
 
         // ---------------------------------------------------------------------------
@@ -550,12 +541,12 @@ end;
           tabella_01.fieldbyname('partitario').asstring := 'no';
         end;
 
-        if trim(tabella_clifor.fieldbyname('cod_pag').asString) <> '' then
+        if trim(tabella_clifor.fieldbyname('cod_pag').asstring) <> '' then
         begin
-          tabella_01.fieldbyname('tpa_codice').asstring := trim(tabella_clifor.fieldbyname('cod_pag').asString);
+          tabella_01.fieldbyname('tpa_codice').asstring := trim(tabella_clifor.fieldbyname('cod_pag').asstring);
         end;
 
-        if trim(tabella_clifor.fieldbyname('cod_vettore').asString) <> '' then
+        if trim(tabella_clifor.fieldbyname('cod_vettore').asstring) <> '' then
         begin
           tabella_01.fieldbyname('tsp_codice').asstring := trim(tabella_clifor.fieldbyname('cod_vettore').asstring);
         end;
@@ -565,19 +556,19 @@ end;
           tabella_01.fieldbyname('tpo_codice').asstring := trim(tabella_clifor.fieldbyname('cod_porto').asstring);
         end;
 
-        if trim(tabella_clifor.fieldbyname('cod_zona').asString) <> '' then
+        if trim(tabella_clifor.fieldbyname('cod_zona').asstring) <> '' then
         begin
-          tabella_01.fieldbyname('tzo_codice').asstring := trim(tabella_clifor.fieldbyname('cod_zona').asString);
+          tabella_01.fieldbyname('tzo_codice').asstring := trim(tabella_clifor.fieldbyname('cod_zona').asstring);
         end;
 
-        if trim(tabella_clifor.fieldbyname('cod_agente').asString) <> '' then
+        if trim(tabella_clifor.fieldbyname('cod_agente').asstring) <> '' then
         begin
           tabella_01.fieldbyname('tag_codice').asstring := copy(tabella_clifor.fieldbyname('cod_agente').asstring, 3, 4);
         end;
 
-        if trim(tabella_clifor.fieldbyname('cod_iva').asString) <> '21' then
+        if trim(tabella_clifor.fieldbyname('cod_iva').asstring) <> '21' then
         begin
-          tabella_01.fieldbyname('tiv_codice').asstring := trim(tabella_clifor.fieldbyname('cod_iva').asString);
+          tabella_01.fieldbyname('tiv_codice').asstring := trim(tabella_clifor.fieldbyname('cod_iva').asstring);
         end;
 
         if trim(tabella_clifor.fieldbyname('cod_banca1').asstring) <> '' then
@@ -594,24 +585,24 @@ end;
         end;
         tabella_01.fieldbyname('mese_01').asInteger := 0;
 
-        if trim(tabella_clifor.fieldbyname('num_mese_escl1').asString) <> '' then
+        if trim(tabella_clifor.fieldbyname('num_mese_escl1').asstring) <> '' then
           tabella_01.fieldbyname('mese_01').asInteger := tabella_clifor.fieldbyname('num_mese_escl1').asInteger;
 
-        if tabella_01.fieldbyname('mese_01').asinteger <> 0 then
+        if tabella_01.fieldbyname('mese_01').asInteger <> 0 then
         begin
-          tabella_01.fieldbyname('giorno_01').asinteger := tabella_clifor.fieldbyname('num_gio_mese_suc').asinteger;
+          tabella_01.fieldbyname('giorno_01').asInteger := tabella_clifor.fieldbyname('num_gio_mese_suc').asInteger;
         end;
-        tabella_01.fieldbyname('mese_02').asinteger := 0;
+        tabella_01.fieldbyname('mese_02').asInteger := 0;
 
-        if trim(tabella_clifor.fieldbyname('num_mese_escl2').asString) <> '' then
-          tabella_01.fieldbyname('mese_02').asinteger := tabella_clifor.fieldbyname('num_mese_escl2').asinteger;
+        if trim(tabella_clifor.fieldbyname('num_mese_escl2').asstring) <> '' then
+          tabella_01.fieldbyname('mese_02').asInteger := tabella_clifor.fieldbyname('num_mese_escl2').asInteger;
 
-        if tabella_01.fieldbyname('mese_02').asinteger <> 0 then
+        if tabella_01.fieldbyname('mese_02').asInteger <> 0 then
         begin
-          tabella_01.fieldbyname('giorno_02').asinteger := tabella_clifor.fieldbyname('num_gio_mese_suc2').asinteger;
+          tabella_01.fieldbyname('giorno_02').asInteger := tabella_clifor.fieldbyname('num_gio_mese_suc2').asInteger;
         end;
 
-        if (tabella_01.fieldbyname('mese_01').asinteger <> 0) or (tabella_01.fieldbyname('mese_02').asinteger <> 0) then
+        if (tabella_01.fieldbyname('mese_01').asInteger <> 0) or (tabella_01.fieldbyname('mese_02').asInteger <> 0) then
         begin
           tabella_01.fieldbyname('mesi_esclusi').asstring := 'si';
         end;
@@ -629,7 +620,7 @@ end;
           begin
           tabella_01.fieldbyname('riepilogo_fattura').asstring := 'globale';
           end;
-        *)
+ *)
         if (tabella_clifor.fieldbyname('flg_addebito_bollo').asstring = '1') then
         begin
         end;
@@ -652,7 +643,7 @@ end;
           begin
           tabella_01.fieldbyname('valori_in_bolla').asstring := 'no';
           end;
-        *)
+ *)
         try
           tabella_01.fieldbyname('fido').asFloat := tabella_clifor.fieldbyname('val_fido').asFloat;
         except
@@ -677,14 +668,12 @@ end;
           stringa := iban.calcola_iban('IT', tabella_01.fieldbyname('codice_abi').asstring, tabella_01.fieldbyname('codice_cab').asstring, tabella_01.fieldbyname('conto_corrente').asstring);
 
           tabella_01.fieldbyname('cin').asstring := copy(stringa, 5, 1);
-          tabella_01.fieldbyname('iban').asstring := copy(stringa, 1, 4) + ' ' + copy(stringa, 5, 4) + ' ' +
-            copy(stringa, 9, 4) + ' ' + copy(stringa, 13, 4) + ' ' + copy(stringa, 17, 4) + ' ' +
-            copy(stringa, 21, 4) + ' ' + copy(stringa, 25, 3);
+          tabella_01.fieldbyname('iban').asstring := copy(stringa, 1, 4) + ' ' + copy(stringa, 5, 4) + ' ' + copy(stringa, 9, 4) + ' ' + copy(stringa, 13, 4) + ' ' + copy(stringa, 17, 4) + ' ' + copy(stringa, 21, 4) + ' ' + copy(stringa, 25, 3);
 
         end;
 
         tabella_01.fieldbyname('stampa_codice_articolo_cliente').asstring := 'no';
-
+        tabella_01.fieldbyname('codice_ufficio_pa').asstring :=tabella_clifor.fieldbyname('cod_idest').asstring;
         tabella_01.post;
 
         // file cfg
@@ -692,8 +681,7 @@ end;
         if cfg.locate('cfg_tipo;cfg_codice', vararrayof(['C', tabella_01.fieldbyname('codice').asstring]), []) then
         begin
           cfg.edit;
-          cfg.fieldbyname('descrizione1').asstring := trim(tabella_01.fieldbyname('descrizione1').asstring) + ' ' +
-            trim(tabella_01.fieldbyname('descrizione2').asstring);
+          cfg.fieldbyname('descrizione1').asstring := trim(tabella_01.fieldbyname('descrizione1').asstring) + ' ' + trim(tabella_01.fieldbyname('descrizione2').asstring);
           cfg.fieldbyname('descrizione2').asstring := trim(tabella_01.fieldbyname('citta').asstring);
           cfg.fieldbyname('utente').asstring := utente;
           cfg.fieldbyname('data_ora').asdatetime := now;
@@ -705,11 +693,11 @@ end;
     tabella_clifor.next;
   end;
 
-  query_02.close;
-  tabella_01.close;
-  tabella_02.close;
-  tabella_clifor.close;
-  cfg.close;
+  query_02.Close;
+  tabella_01.Close;
+  tabella_02.Close;
+  tabella_clifor.Close;
+  cfg.Close;
 end;
 
 procedure TCONVEREADY.converti_contatti;
@@ -729,7 +717,7 @@ begin
   read_tabella(arc.arc, 'dit', 'codice', ditta, '*');
 
   cancella_tabella('nml');
-  tabella_02.close;
+  tabella_02.Close;
   tabella_02.tablename := 'nml';
   tabella_02.open;
 
@@ -746,7 +734,7 @@ begin
   tabella_esa_01.open;
   while not tabella_esa_01.eof do
   begin
-    Application.processMessages;
+    application.processmessages;
     // ------------------------------------
     // CERCO CODICE IN TABELLA CLIENTI-FORNITORI
     // ------------------------------------
@@ -789,8 +777,8 @@ begin
     tabella_esa_01.next;
   end;
 
-  tabella_esa_01.close;
-  tabella_02.close;
+  tabella_esa_01.Close;
+  tabella_02.Close;
 end;
 
 procedure TCONVEREADY.converti_fornitori;
@@ -804,7 +792,7 @@ begin
 
   read_tabella(arc.arc, 'dit', 'codice', ditta, '*');
 
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'frn';
   tabella_01.open;
 
@@ -815,7 +803,7 @@ begin
   if (codice_nom_numerico = 'si') and (not v_codifica_clienti.checked) then
   begin
     tabella_02.last;
-    progressivo := tabella_02.fieldbyname('codice').asinteger;
+    progressivo := tabella_02.fieldbyname('codice').asInteger;
   end;
 
   cfg.tablename := 'cfg';
@@ -831,40 +819,30 @@ begin
   // --------------------------------------------------------
   try
     tabella_esa_03.Close;
-    tabella_esa_03.Sql.Clear;
-    tabella_esa_03.Sql.Add('SELECT * from CA_ANAGRAFICHE');
-    tabella_esa_03.Sql.Add('where cod_anagra=:cod_anagra');
+    tabella_esa_03.sql.clear;
+    tabella_esa_03.sql.add('SELECT * from CA_ANAGRAFICHE');
+    tabella_esa_03.sql.add('where cod_anagra=:cod_anagra');
   except
     messaggio(000, 'manca l''anagrafica comune (CA_ANAGRAFICHE');
-    close;
+    Close;
     abort;
   end;
 
   while not tabella_clifor.eof do
   begin
-    Application.ProcessMessages;
+    application.processmessages;
 
     // ------------------------------------
     // CERCO CODICE IN TABELLA CLIENTI-FORNITORI
     // ------------------------------------
-    tabella_esa_03.close;
-    tabella_esa_03.parameters.parambyname('cod_anagra').value := tabella_clifor.FieldByName('cod_anagra').AsString;
+    tabella_esa_03.Close;
+    tabella_esa_03.Parameters.ParamByName('cod_anagra').Value := tabella_clifor.fieldbyname('cod_anagra').asstring;
     tabella_esa_03.open;
     if not tabella_esa_03.eof then
     begin
-      if (codice_nom_numerico = 'si') then
+      if (codice_nom_numerico = 'si') and (v_codifica_clienti.checked) then
       begin
-        assegna_codice_frn(tabella_esa_03.fieldbyname('cod_anagra').asstring, cli_for);
-      end
-      else
-      begin
-if (v_codifica_clienti.checked) then
-      begin
-        assegna_codice_frn(tabella_esa_03.fieldbyname('cod_anagra').asstring, cli_for);
-end
-else
-begin
-        read_tabella(arc.arcdit, 'cli', 'codice_alternativo', tabella_clifor.FieldByName('cod_anagra').AsString);
+        read_tabella(arc.arcdit, 'cli', 'codice_alternativo', tabella_clifor.fieldbyname('cod_anagra').asstring);
         if archivio.eof then
         begin
           progressivo := progressivo + 1;
@@ -874,11 +852,14 @@ begin
         begin
           cli_for := archivio.fieldbyname('codice').asstring;
         end;
-end;
+      end
+      else
+      begin
+        assegna_codice_frn(tabella_esa_03.fieldbyname('cod_anagra').asstring, cli_for);
       end;
 
       // nominativi
-      if not tabella_02.Locate('codice', cli_for, []) then
+      if not tabella_02.locate('codice', cli_for, []) then
       begin
 
         if tabella_clifor.fieldbyname('cod_clifor').asstring <> '' then
@@ -908,8 +889,7 @@ end;
           begin
             tabella_02.fieldbyname('descrizione1').asstring := '.';
           end;
-          tabella_02.fieldbyname('descrizione2').asstring :=
-            trim(copy(tabella_esa_03.fieldbyname('des_ragsoc').asstring, j + 1, length(tabella_esa_03.fieldbyname('des_ragsoc').asstring) - j));
+          tabella_02.fieldbyname('descrizione2').asstring := trim(copy(tabella_esa_03.fieldbyname('des_ragsoc').asstring, j + 1, length(tabella_esa_03.fieldbyname('des_ragsoc').asstring) - j));
 
           tabella_02.fieldbyname('via').asstring := trim(tabella_clifor.fieldbyname('des_indir_res').asstring);
           tabella_02.fieldbyname('cap').asstring := trim(tabella_clifor.fieldbyname('cod_cap_res').asstring);
@@ -927,12 +907,12 @@ end;
           tabella_02.fieldbyname('cellulare').asstring := trim(tabella_clifor.fieldbyname('sig_tel2_res').asstring);
           if tabella_clifor.fieldbyname('flg_pers_fis').asstring = '1' then
           begin
-            tabella_02.fieldbyname('codice_alternativo').asstring := trim(tabella_clifor.fieldbyname('des_ragsoc').asString);
+            tabella_02.fieldbyname('codice_alternativo').asstring := trim(tabella_clifor.fieldbyname('des_ragsoc').asstring);
 
-            if trim(tabella_clifor.fieldbyname('des_cogn').asString) <> '' then
+            if trim(tabella_clifor.fieldbyname('des_cogn').asstring) <> '' then
             begin
-              tabella_02.fieldbyname('descrizione1').asstring := trim(tabella_clifor.fieldbyname('des_cogn').asString);
-              tabella_02.fieldbyname('descrizione2').asstring := trim(tabella_clifor.fieldbyname('des_nome').asString);
+              tabella_02.fieldbyname('descrizione1').asstring := trim(tabella_clifor.fieldbyname('des_cogn').asstring);
+              tabella_02.fieldbyname('descrizione2').asstring := trim(tabella_clifor.fieldbyname('des_nome').asstring);
             end;
 
             tabella_02.fieldbyname('persona_fisica').asstring := 'si';
@@ -958,9 +938,9 @@ end;
             tabella_02.fieldbyname('persona_fisica').asstring := 'no';
           end;
 
-          if trim(tabella_clifor.fieldbyname('cod_valuta').asString) <> '' then
+          if trim(tabella_clifor.fieldbyname('cod_valuta').asstring) <> '' then
           begin
-            tabella_02.fieldbyname('tva_codice').asstring := trim(tabella_clifor.fieldbyname('cod_valuta').asString);
+            tabella_02.fieldbyname('tva_codice').asstring := trim(tabella_clifor.fieldbyname('cod_valuta').asstring);
           end
           else
           begin
@@ -1042,12 +1022,12 @@ end;
           tabella_01.fieldbyname('partitario').asstring := 'no';
         end;
 
-        if trim(tabella_clifor.fieldbyname('cod_pag').asString) <> '' then
+        if trim(tabella_clifor.fieldbyname('cod_pag').asstring) <> '' then
         begin
-          tabella_01.fieldbyname('tpa_codice').asstring := trim(tabella_clifor.fieldbyname('cod_pag').asString);
+          tabella_01.fieldbyname('tpa_codice').asstring := trim(tabella_clifor.fieldbyname('cod_pag').asstring);
         end;
 
-        if trim(tabella_clifor.fieldbyname('cod_vettore').asString) <> '' then
+        if trim(tabella_clifor.fieldbyname('cod_vettore').asstring) <> '' then
         begin
           tabella_01.fieldbyname('tsp_codice').asstring := trim(tabella_clifor.fieldbyname('cod_vettore').asstring);
         end;
@@ -1057,14 +1037,14 @@ end;
           tabella_01.fieldbyname('tpo_codice').asstring := trim(tabella_clifor.fieldbyname('cod_porto').asstring);
         end;
 
-        if trim(tabella_clifor.fieldbyname('cod_zona').asString) <> '' then
+        if trim(tabella_clifor.fieldbyname('cod_zona').asstring) <> '' then
         begin
-          tabella_01.fieldbyname('tzo_codice').asstring := trim(tabella_clifor.fieldbyname('cod_zona').asString);
+          tabella_01.fieldbyname('tzo_codice').asstring := trim(tabella_clifor.fieldbyname('cod_zona').asstring);
         end;
 
-        if trim(tabella_clifor.fieldbyname('cod_iva').asString) <> '21' then
+        if trim(tabella_clifor.fieldbyname('cod_iva').asstring) <> '21' then
         begin
-          tabella_01.fieldbyname('tiv_codice').asstring := trim(tabella_clifor.fieldbyname('cod_iva').asString);
+          tabella_01.fieldbyname('tiv_codice').asstring := trim(tabella_clifor.fieldbyname('cod_iva').asstring);
         end;
 
         if trim(tabella_clifor.fieldbyname('cod_banca1').asstring) <> '' then
@@ -1081,24 +1061,24 @@ end;
         end;
         tabella_01.fieldbyname('mese_01').asInteger := 0;
 
-        if trim(tabella_clifor.fieldbyname('num_mese_escl1').asString) <> '' then
+        if trim(tabella_clifor.fieldbyname('num_mese_escl1').asstring) <> '' then
           tabella_01.fieldbyname('mese_01').asInteger := tabella_clifor.fieldbyname('num_mese_escl1').asInteger;
 
-        if tabella_01.fieldbyname('mese_01').asinteger <> 0 then
+        if tabella_01.fieldbyname('mese_01').asInteger <> 0 then
         begin
-          tabella_01.fieldbyname('giorno_01').asinteger := tabella_clifor.fieldbyname('num_gio_mese_suc').asinteger;
+          tabella_01.fieldbyname('giorno_01').asInteger := tabella_clifor.fieldbyname('num_gio_mese_suc').asInteger;
         end;
-        tabella_01.fieldbyname('mese_02').asinteger := 0;
+        tabella_01.fieldbyname('mese_02').asInteger := 0;
 
-        if trim(tabella_clifor.fieldbyname('num_mese_escl2').asString) <> '' then
-          tabella_01.fieldbyname('mese_02').asinteger := tabella_clifor.fieldbyname('num_mese_escl2').asinteger;
+        if trim(tabella_clifor.fieldbyname('num_mese_escl2').asstring) <> '' then
+          tabella_01.fieldbyname('mese_02').asInteger := tabella_clifor.fieldbyname('num_mese_escl2').asInteger;
 
-        if tabella_01.fieldbyname('mese_02').asinteger <> 0 then
+        if tabella_01.fieldbyname('mese_02').asInteger <> 0 then
         begin
-          tabella_01.fieldbyname('giorno_02').asinteger := tabella_clifor.fieldbyname('num_gio_mese_suc2').asinteger;
+          tabella_01.fieldbyname('giorno_02').asInteger := tabella_clifor.fieldbyname('num_gio_mese_suc2').asInteger;
         end;
 
-        if (tabella_01.fieldbyname('mese_01').asinteger <> 0) or (tabella_01.fieldbyname('mese_02').asinteger <> 0) then
+        if (tabella_01.fieldbyname('mese_01').asInteger <> 0) or (tabella_01.fieldbyname('mese_02').asInteger <> 0) then
         begin
           tabella_01.fieldbyname('mesi_esclusi').asstring := 'si';
         end;
@@ -1140,17 +1120,17 @@ end;
 
         cfg.post;
         end;
-      *)
+ *)
 
       tabella_clifor.next;
     end;
   end;
-  tabella_01.close;
-  tabella_02.close;
-  tabella_clifor.close;
-  tabella_esa_02.close;
-  tabella_esa_03.close;
-  cfg.close;
+  tabella_01.Close;
+  tabella_02.Close;
+  tabella_clifor.Close;
+  tabella_esa_02.Close;
+  tabella_esa_03.Close;
+  cfg.Close;
 
 end;
 
@@ -1159,13 +1139,13 @@ begin
   v_tabella_01.caption := 'piano dei conti';
   application.processmessages;
 
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'gen';
   tabella_01.open;
 
   cancella_tabella('gen');
 
-  tabella_02.close;
+  tabella_02.Close;
   tabella_02.tablename := 'tpc';
   tabella_02.open;
 
@@ -1185,15 +1165,15 @@ begin
   end;
 
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT * FROM CO_PIACONT');
-  tabella_esa_01.Sql.Add('ORDER BY cod_piacont');
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT * FROM CO_PIACONT');
+  tabella_esa_01.sql.add('ORDER BY cod_piacont');
   tabella_esa_01.open;
 
-  tabella_01_ds.dataset := tabella_esa_01;
+  tabella_01_ds.DataSet := tabella_esa_01;
   while not tabella_esa_01.eof do
   begin
-    if tabella_esa_01.fieldbyname('num_livello').asinteger = 3 then
+    if tabella_esa_01.fieldbyname('num_livello').asInteger = 3 then
     begin
       tabella_01.append;
       tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.fieldbyname('cod_piacont').asstring);
@@ -1209,15 +1189,14 @@ begin
 
       tabella_02.fieldbyname('codice_01').asstring := copy(trim(tabella_esa_01.fieldbyname('cod_piacont').asstring), 1, 2);
 
-      if tabella_esa_01.fieldbyname('num_livello').asinteger = 2 then
+      if tabella_esa_01.fieldbyname('num_livello').asInteger = 2 then
       begin
         tabella_02.fieldbyname('codice_02').asstring := copy(trim(tabella_esa_01.fieldbyname('cod_piacont').asstring), 3, 2);
         tabella_02.fieldbyname('tipo').asstring := '';
       end
       else
       begin
-        if (tabella_02.fieldbyname('codice_01').asstring = '03') or
-          (tabella_02.fieldbyname('codice_01').asstring = '04') then
+        if (tabella_02.fieldbyname('codice_01').asstring = '03') or (tabella_02.fieldbyname('codice_01').asstring = '04') then
         begin
           tabella_02.fieldbyname('tipo').asstring := 'economico';
         end
@@ -1234,21 +1213,16 @@ begin
     tabella_esa_01.next;
   end;
 
-  tabella_01.close;
-  tabella_02.close;
-  tabella_esa_01.close;
+  tabella_01.Close;
+  tabella_02.Close;
+  tabella_esa_01.Close;
 end;
 
 procedure TCONVEREADY.converti_articoli;
 var
-  descrizione1,
-    descrizione2,
-    gruppo,
-    sottogru: string;
-  tcc_codice,
-    tcf_codice,
-    codice_stat: string;
-  tca_codice: Word;
+  descrizione1, descrizione2, gruppo, sottogru: string;
+  tcc_codice, tcf_codice, codice_stat: string;
+  tca_codice: word;
   progressivo: integer;
 begin
   v_tabella_01.caption := 'articoli';
@@ -1256,12 +1230,12 @@ begin
 
   tabella_01_ds.DataSet := tabella_02;
 
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'art';
   tabella_01.open;
 
-  tabella_02.close;
-  tabella_02.SQL.clear;
+  tabella_02.Close;
+  tabella_02.sql.clear;
   tabella_02.sql.add('select codice from tgm');
   tabella_02.sql.add('where');
   tabella_02.sql.add('cod_grumerc=:cod_grumerc and ');
@@ -1271,22 +1245,22 @@ begin
   cancella_tabella('cpv');
   cancella_tabella('cpa');
 
-  tca.close;
+  tca.Close;
   tca.tablename := 'tca';
   tca.open;
 
-  taq.close;
+  taq.Close;
   taq.tablename := 'taq';
   taq.open;
 
-  tsa.close;
+  tsa.Close;
   tsa.open;
 
-  cpv.close;
+  cpv.Close;
   cpv.tablename := 'cpv';
   cpv.open;
 
-  cpa.close;
+  cpa.Close;
   cpa.tablename := 'cpa';
   cpa.open;
 
@@ -1295,14 +1269,14 @@ begin
 
   try
     tabella_esa_02.Close;
-    tabella_esa_02.Sql.Clear;
-    tabella_esa_02.Sql.Add('SELECT * from MG_ARTBASE');
-    tabella_esa_02.Sql.Add('order by cod_art');
+    tabella_esa_02.sql.clear;
+    tabella_esa_02.sql.add('SELECT * from MG_ARTBASE');
+    tabella_esa_02.sql.add('order by cod_art');
     tabella_esa_02.open;
 
   except
     messaggio(000, 'manca la tabella delle articoli (MG_ARTBASE)');
-    close;
+    Close;
     abort;
   end;
 
@@ -1314,7 +1288,7 @@ begin
   tcf_codice := arc.dit.fieldbyname('tcf_codice_frn').asstring;
   tca_codice := 0;
 
-  tabella_01_ds.dataset := tabella_esa_02;
+  tabella_01_ds.DataSet := tabella_esa_02;
   while not tabella_esa_02.eof do
   begin
 
@@ -1363,11 +1337,11 @@ begin
 
       gruppo := trim(tabella_esa_02.fieldbyname('cod_grumerc').asstring);
       sottogru := trim(tabella_esa_02.fieldbyname('cod_sgrumerc').asstring);
-      codice_stat := trim(tabella_esa_02.fieldbyname('cod_gruppostat').AsString);
+      codice_stat := trim(tabella_esa_02.fieldbyname('cod_gruppostat').asstring);
 
       if codice_stat <> '' then
       begin
-        tabella_01.FieldByName('tsa_codice').asstring := codice_stat;
+        tabella_01.fieldbyname('tsa_codice').asstring := codice_stat;
       end;
 
       if (gruppo <> '') then
@@ -1377,9 +1351,9 @@ begin
 
       if (sottogru <> '') then
       begin
-        tabella_02.close;
-        tabella_02.parambyname('cod_grumerc').asstring := gruppo;
-        tabella_02.parambyname('cod_sgrumerc').asstring := sottogru;
+        tabella_02.Close;
+        tabella_02.ParamByName('cod_grumerc').asstring := gruppo;
+        tabella_02.ParamByName('cod_sgrumerc').asstring := sottogru;
         tabella_02.open;
 
         tabella_01.fieldbyname('tgm_codice').asstring := tabella_02.fieldbyname('codice').asstring;
@@ -1415,13 +1389,13 @@ begin
     tabella_esa_02.next;
   end; // while
 
-  query.close;
-  query_02.close;
-  cpa.close;
-  cpv.close;
-  tabella_01.close;
-  tabella_esa_02.close;
-  tsa.close;
+  query.Close;
+  query_02.Close;
+  cpa.Close;
+  cpv.Close;
+  tabella_01.Close;
+  tabella_esa_02.Close;
+  tsa.Close;
 end;
 
 procedure TCONVEREADY.converti_bar;
@@ -1431,34 +1405,32 @@ begin
 
   tabella_01_ds.DataSet := tabella_esa_02;
 
-  tabella_02.close;
+  tabella_02.Close;
   tabella_02.tablename := 'art';
   tabella_02.open;
 
   cancella_tabella('bar');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'bar';
   tabella_01.open;
 
   try
     tabella_esa_02.Close;
-    tabella_esa_02.Sql.Clear;
-    tabella_esa_02.Sql.Add('SELECT * FROM MG_ARTICOLIALIAS');
-    tabella_esa_02.Sql.Add('order by cod_art, prg_art, prg_alias');
+    tabella_esa_02.sql.clear;
+    tabella_esa_02.sql.add('SELECT * FROM MG_ARTICOLIALIAS');
+    tabella_esa_02.sql.add('order by cod_art, prg_art, prg_alias');
     tabella_esa_02.open;
 
   except
     messaggio(000, 'manca la tabella barcode articoli (MG_ARTICOLIALIAS)');
-    close;
+    Close;
     abort;
   end;
 
   while not tabella_esa_02.eof do
   begin
 
-    if not tabella_01.locate('art_codice;codice_barre', Vararrayof([
-      trim(tabella_esa_02.fieldbyname('cod_art').asstring),
-      trim(tabella_esa_02.fieldbyname('cod_agg').asstring)]), []) then
+    if not tabella_01.locate('art_codice;codice_barre', vararrayof([trim(tabella_esa_02.fieldbyname('cod_art').asstring), trim(tabella_esa_02.fieldbyname('cod_agg').asstring)]), []) then
     begin
       tabella_01.append;
 
@@ -1480,8 +1452,8 @@ begin
     tabella_esa_02.next;
   end;
 
-  tabella_01.close;
-  tabella_esa_02.close;
+  tabella_01.Close;
+  tabella_esa_02.Close;
 end;
 
 procedure TCONVEREADY.converti_tmo;
@@ -1489,20 +1461,20 @@ begin
   v_tabella_01.caption := 'causali magazzino';
   application.processmessages;
 
-  tabella_01_ds.Dataset := tabella_02;
+  tabella_01_ds.DataSet := tabella_02;
 
   cancella_tabella('tmo');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'tmo';
   tabella_01.open;
 
   tabella_esa_02.Close;
-  tabella_esa_02.Sql.Clear;
-  tabella_esa_02.Sql.Add('SELECT * from CA_CAUMAG');
-  tabella_esa_02.Sql.Add('order by cod_caumag');
+  tabella_esa_02.sql.clear;
+  tabella_esa_02.sql.add('SELECT * from CA_CAUMAG');
+  tabella_esa_02.sql.add('order by cod_caumag');
   tabella_esa_02.open;
 
-  tabella_01_ds.dataset := tabella_esa_02;
+  tabella_01_ds.DataSet := tabella_esa_02;
   while not tabella_esa_02.eof do
   begin
     if tabella_esa_02.fieldbyname('cod_caumag').asstring <> '' then
@@ -1557,8 +1529,7 @@ begin
         tabella_01.fieldbyname('valorizzazione').asstring := 'decrementa';
       end;
 
-      if (tabella_esa_02.fieldbyname('cod_caumag_r').asstring <> '000') and
-        (tabella_esa_02.fieldbyname('cod_caumag_r').asstring <> '') then
+      if (tabella_esa_02.fieldbyname('cod_caumag_r').asstring <> '000') and (tabella_esa_02.fieldbyname('cod_caumag_r').asstring <> '') then
         tabella_01.fieldbyname('tmo_codice_collegato').asstring := tabella_esa_02.fieldbyname('cod_caumag_r').asstring;
 
       tabella_01.post;
@@ -1567,8 +1538,8 @@ begin
     tabella_esa_02.next;
   end;
 
-  tabella_01.close;
-  tabella_esa_02.close;
+  tabella_01.Close;
+  tabella_esa_02.Close;
 end;
 
 procedure TCONVEREADY.converti_tpa;
@@ -1580,36 +1551,36 @@ begin
   v_tabella_01.caption := 'codici pagamento';
   application.processmessages;
 
-  tabella_01_ds.Dataset := tabella_02;
+  tabella_01_ds.DataSet := tabella_02;
 
   cancella_tabella('tpa');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'tpa';
   tabella_01.open;
 
   try
     tabella_esa_01.Close;
-    tabella_esa_01.Sql.Clear;
-    tabella_esa_01.Sql.Add('SELECT * from CA_PAGAMT');
-    tabella_esa_01.Sql.Add('order by cod_pag');
+    tabella_esa_01.sql.clear;
+    tabella_esa_01.sql.add('SELECT * from CA_PAGAMT');
+    tabella_esa_01.sql.add('order by cod_pag');
     tabella_esa_01.open;
   except
     messaggio(000, 'manca la tabella patamenti testata (CA_PAGMT)');
-    close;
+    Close;
     abort;
   end;
 
   try
     tabella_esa_02.Close;
-    tabella_esa_02.Sql.Clear;
-    tabella_esa_02.Sql.Add('SELECT * from CA_PAGAMR');
-    tabella_esa_02.Sql.Add('where');
-    tabella_esa_02.Sql.Add('cod_pag=:cod_pag');
-    tabella_esa_02.Sql.Add('order by 1,2,3');
+    tabella_esa_02.sql.clear;
+    tabella_esa_02.sql.add('SELECT * from CA_PAGAMR');
+    tabella_esa_02.sql.add('where');
+    tabella_esa_02.sql.add('cod_pag=:cod_pag');
+    tabella_esa_02.sql.add('order by 1,2,3');
     tabella_esa_02.open;
   except
     messaggio(000, 'manca la tabella causali di magazzino (CA_PAGAMR)');
-    close;
+    Close;
     abort;
   end;
 
@@ -1617,64 +1588,64 @@ begin
   begin
     tabella_01.append;
 
-    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.fieldbyname('cod_pag').asString);
+    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.fieldbyname('cod_pag').asstring);
     tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.fieldbyname('des_pag').asstring);
     if tabella_01.fieldbyname('descrizione').asstring = '' then
     begin
       tabella_01.fieldbyname('descrizione').asstring := '.';
     end;
 
-    tabella_esa_02.close;
-    tabella_esa_02.parameters.parambyname('cod_pag').value := trim(tabella_esa_01.fieldbyname('cod_pag').asString);
+    tabella_esa_02.Close;
+    tabella_esa_02.Parameters.ParamByName('cod_pag').Value := trim(tabella_esa_01.fieldbyname('cod_pag').asstring);
     tabella_esa_02.open;
 
-    tabella_01.fieldbyname('numero_rate').asinteger := tabella_esa_02.recordcount;
+    tabella_01.fieldbyname('numero_rate').asInteger := tabella_esa_02.recordcount;
     tabella_01.fieldbyname('tipo_rate').asstring := 'costanti';
-    tabella_01.fieldbyname('giorni_prima_rata_fisse').asinteger := 0;
-    tabella_01.fieldbyname('giorni_rate_fisse').asinteger := 0;
+    tabella_01.fieldbyname('giorni_prima_rata_fisse').asInteger := 0;
+    tabella_01.fieldbyname('giorni_rate_fisse').asInteger := 0;
 
     nome_campo := 'tts_codice_fisse';
 
-    if (trim(tabella_esa_02.fieldbyname('cod_tipo_pag').asString) = 'RD') then
+    if (trim(tabella_esa_02.fieldbyname('cod_tipo_pag').asstring) = 'RD') then
       tabella_01.fieldbyname(nome_campo).asstring := 'rimessa diretta'
-    else if (trim(tabella_esa_02.fieldbyname('cod_tipo_pag').asString) = 'RB') then
+    else if (trim(tabella_esa_02.fieldbyname('cod_tipo_pag').asstring) = 'RB') then
       tabella_01.fieldbyname(nome_campo).asstring := 'R.I.B.A.'
-    else if (trim(tabella_esa_02.fieldbyname('cod_tipo_pag').asString) = 'BO') then
+    else if (trim(tabella_esa_02.fieldbyname('cod_tipo_pag').asstring) = 'BO') then
       tabella_01.fieldbyname(nome_campo).asstring := 'bonifico bancario'
-    else if (trim(tabella_esa_02.fieldbyname('cod_tipo_pag').asString) = 'RID') then
+    else if (trim(tabella_esa_02.fieldbyname('cod_tipo_pag').asstring) = 'RID') then
       tabella_01.fieldbyname(nome_campo).asstring := 'R.I.D.';
 
     riga := 0;
-    while not tabella_esa_02.Eof do
+    while not tabella_esa_02.eof do
     begin
       riga := riga + 1;
 
-      if (riga <= tabella_01.fieldbyname('numero_rate').asinteger) and (riga < 9) then
+      if (riga <= tabella_01.fieldbyname('numero_rate').asInteger) and (riga < 9) then
       begin
-        nome_campo := 'tts_codice_variabili_0' + IntToStr(riga);
+        nome_campo := 'tts_codice_variabili_0' + inttostr(riga);
 
-        if (trim(tabella_esa_02.fieldbyname('cod_tipo_pag').asString) = 'RD') then
+        if (trim(tabella_esa_02.fieldbyname('cod_tipo_pag').asstring) = 'RD') then
           tabella_01.fieldbyname(nome_campo).asstring := 'rimessa diretta'
-        else if (trim(tabella_esa_02.fieldbyname('cod_tipo_pag').asString) = 'RB') then
+        else if (trim(tabella_esa_02.fieldbyname('cod_tipo_pag').asstring) = 'RB') then
           tabella_01.fieldbyname(nome_campo).asstring := 'R.I.B.A.'
-        else if (trim(tabella_esa_02.fieldbyname('cod_tipo_pag').asString) = 'BO') then
+        else if (trim(tabella_esa_02.fieldbyname('cod_tipo_pag').asstring) = 'BO') then
           tabella_01.fieldbyname(nome_campo).asstring := 'bonifico bancario'
-        else if (trim(tabella_esa_02.fieldbyname('cod_tipo_pag').asString) = 'RID') then
+        else if (trim(tabella_esa_02.fieldbyname('cod_tipo_pag').asstring) = 'RID') then
           tabella_01.fieldbyname(nome_campo).asstring := 'R.I.D.';
 
         // fine mese
-        nome_campo := 'fine_mese_variabili_0' + IntToStr(riga);
+        nome_campo := 'fine_mese_variabili_0' + inttostr(riga);
 
-        if (trim(tabella_esa_02.fieldbyname('ind_data_scad').asString)) = '4' then
+        if (trim(tabella_esa_02.fieldbyname('ind_data_scad').asstring)) = '4' then
           tabella_01.fieldbyname(nome_campo).asstring := 'si';
 
         // perc da pag
-        nome_campo := 'percentuale_variabili_0' + IntToStr(riga);
-        tabella_01.fieldbyname(nome_campo).asfloat := tabella_esa_02.fieldbyname('prc_totpag_rata').asFloat;
+        nome_campo := 'percentuale_variabili_0' + inttostr(riga);
+        tabella_01.fieldbyname(nome_campo).asFloat := tabella_esa_02.fieldbyname('prc_totpag_rata').asFloat;
 
         // rata
-        nome_campo := 'giorni_variabili_0' + IntToStr(riga);
-        tabella_01.fieldbyname(nome_campo).asfloat := tabella_esa_02.fieldbyname('num_giorni').asFloat;
+        nome_campo := 'giorni_variabili_0' + inttostr(riga);
+        tabella_01.fieldbyname(nome_campo).asFloat := tabella_esa_02.fieldbyname('num_giorni').asFloat;
 
       end; // if
 
@@ -1687,8 +1658,8 @@ begin
 
       for i := riga to 8 do
       begin
-        nome_campo := 'tts_codice_variabili_0' + IntToStr(i);
-        tabella_01.fieldbyname(nome_campo).asString := ''
+        nome_campo := 'tts_codice_variabili_0' + inttostr(i);
+        tabella_01.fieldbyname(nome_campo).asstring := ''
       end; // for
     end;
 
@@ -1696,9 +1667,9 @@ begin
     tabella_esa_01.next;
   end;
 
-  tabella_01.close;
-  tabella_esa_01.close;
-  tabella_esa_02.close;
+  tabella_01.Close;
+  tabella_esa_01.Close;
+  tabella_esa_02.Close;
 end;
 
 procedure TCONVEREADY.converti_sedi_amministrative;
@@ -1709,41 +1680,41 @@ begin
   application.processmessages;
 
   cancella_tabella('ind');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'ind';
   tabella_01.open;
 
   cancella_tabella('inf');
-  tabella_02.close;
+  tabella_02.Close;
   tabella_02.tablename := 'inf';
   tabella_02.open;
 
   try
     tabella_esa_01.Close;
-    tabella_esa_01.Sql.Clear;
-    tabella_esa_01.Sql.Add('SELECT * from CA_SEDI');
-    tabella_esa_01.Sql.Add('WHERE');
-    tabella_esa_01.Sql.Add('ind_sede =' + quotedstr('D'));
-    tabella_esa_01.Sql.Add('order by 1,3');
+    tabella_esa_01.sql.clear;
+    tabella_esa_01.sql.add('SELECT * from CA_SEDI');
+    tabella_esa_01.sql.add('WHERE');
+    tabella_esa_01.sql.add('ind_sede =' + quotedstr('D'));
+    tabella_esa_01.sql.add('order by 1,3');
     tabella_esa_01.open;
   except
     raise;
     messaggio(000, 'manca la tabella INDIRIZZI DI SPEDIZIONE (SEDEAMMINISTRATIVA)');
-    close;
+    Close;
     abort;
   end;
 
-  tabella_01_ds.dataset := tabella_esa_01;
+  tabella_01_ds.DataSet := tabella_esa_01;
 
-  tabella_clienti_forn.close;
-  tabella_clienti_forn.prepared := True;
+  tabella_clienti_forn.Close;
+  tabella_clienti_forn.prepared := true;
 
   while not tabella_esa_01.eof do
   begin
     assegna_codice_cli(tabella_esa_01.fieldbyname('cod_anagra_sede').asstring, cli_for);
 
-    tabella_clienti_forn.close;
-    tabella_clienti_forn.parameters.parambyname('codice_nom').value := tabella_esa_01.fieldbyname('cod_anagra_sede').asstring;
+    tabella_clienti_forn.Close;
+    tabella_clienti_forn.Parameters.ParamByName('codice_nom').Value := tabella_esa_01.fieldbyname('cod_anagra_sede').asstring;
     tabella_clienti_forn.open;
 
     if tabella_clienti_forn.fieldbyname('ind_clifor').asstring = 'C' then
@@ -1824,10 +1795,10 @@ begin
     tabella_esa_01.next;
   end;
 
-  tabella_clienti_forn.close;
-  tabella_01.close;
-  tabella_02.close;
-  tabella_esa_01.close;
+  tabella_clienti_forn.Close;
+  tabella_01.Close;
+  tabella_02.Close;
+  tabella_esa_01.Close;
 
 end;
 
@@ -1848,7 +1819,7 @@ begin
     campo_listino := 'tla_codice';
   end;
 
-  query_02.close;
+  query_02.Close;
   query_02.sql.clear;
   query_02.sql.add('select * from tsm');
   query_02.sql.add('where');
@@ -1858,64 +1829,56 @@ begin
 
   cancella_tabella(nome_tabella);
 
-  tsm.close;
+  tsm.Close;
   tsm.open;
 
-  tabella_02.close;
+  tabella_02.Close;
   tabella_02.tablename := 'art';
   tabella_02.open;
 
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := nome_tabella;
   tabella_01.open;
 
-  tabella_01_ds.dataset := tabella_esa_01;
+  tabella_01_ds.DataSet := tabella_esa_01;
 
   tabella_esa_02.Close;
-  tabella_esa_02.Sql.Clear;
-  tabella_esa_02.Sql.Add('SELECT distinct cod_listino FROM CO_CLIFOR');
-  tabella_esa_02.Sql.Add('where');
-  tabella_esa_02.Sql.Add('ind_clifor=:tipo_listino');
-  tabella_esa_02.Sql.Add('order by 1 ');
-  tabella_esa_02.parameters.parambyname('tipo_listino').value := tipo_listino;
+  tabella_esa_02.sql.clear;
+  tabella_esa_02.sql.add('SELECT distinct cod_listino FROM CO_CLIFOR');
+  tabella_esa_02.sql.add('where');
+  tabella_esa_02.sql.add('ind_clifor=:tipo_listino');
+  tabella_esa_02.sql.add('order by 1 ');
+  tabella_esa_02.Parameters.ParamByName('tipo_listino').Value := tipo_listino;
   tabella_esa_02.open;
 
   while not tabella_esa_02.eof do
   begin
 
     tabella_esa_01.Close;
-    tabella_esa_01.Sql.Clear;
-    tabella_esa_01.Sql.Add('SELECT * FROM PZ_PREZZIBASE');
-    tabella_esa_01.Sql.Add('where');
-    tabella_esa_01.Sql.Add('cod_listino=:cod_listino and ');
-    tabella_esa_01.Sql.Add('cod_dep=:cod_dep and ');
-    tabella_esa_01.Sql.Add('dat_obsoleto is null ');
-    tabella_esa_01.Sql.Add('order by cod_listino, prg_listino, cod_art ');
-    tabella_esa_01.parameters.parambyname('cod_listino').value := tabella_esa_02.fieldbyname('cod_listino').asstring;
-    tabella_esa_01.parameters.parambyname('cod_dep').value := v_tma_codice.text;
+    tabella_esa_01.sql.clear;
+    tabella_esa_01.sql.add('SELECT * FROM PZ_PREZZIBASE');
+    tabella_esa_01.sql.add('where');
+    tabella_esa_01.sql.add('cod_listino=:cod_listino and ');
+    tabella_esa_01.sql.add('cod_dep=:cod_dep and ');
+    tabella_esa_01.sql.add('dat_obsoleto is null ');
+    tabella_esa_01.sql.add('order by cod_listino, prg_listino, cod_art ');
+    tabella_esa_01.Parameters.ParamByName('cod_listino').Value := tabella_esa_02.fieldbyname('cod_listino').asstring;
+    tabella_esa_01.Parameters.ParamByName('cod_dep').Value := v_tma_codice.text;
     tabella_esa_01.open;
 
     while not tabella_esa_01.eof do
     begin
 
       articolo := trim(tabella_esa_01.fieldbyname('cod_art').asstring);
-      prg_listino := tabella_esa_01.fieldbyname('prg_listino').asinteger;
+      prg_listino := tabella_esa_01.fieldbyname('prg_listino').asInteger;
       listino := trim(tabella_esa_01.fieldbyname('cod_listino').asstring);
 
-      while
-        not(tabella_esa_01.eof) and
-        (articolo = trim(tabella_esa_01.fieldbyname('cod_art').asstring)) and
-        (listino = trim(tabella_esa_01.fieldbyname('cod_listino').asstring)) and
-        (prg_listino = tabella_esa_01.fieldbyname('prg_listino').asinteger) do
+      while not(tabella_esa_01.eof) and (articolo = trim(tabella_esa_01.fieldbyname('cod_art').asstring)) and (listino = trim(tabella_esa_01.fieldbyname('cod_listino').asstring)) and (prg_listino = tabella_esa_01.fieldbyname('prg_listino').asInteger) do
       begin
 
         if read_tabella(arc.arcdit, 'art', 'codice', tabella_esa_01.fieldbyname('cod_art').asstring) then
         begin
-          if not tabella_01.locate('art_codice;' + campo_listino,
-            VarArrayOf([
-            trim(tabella_esa_01.fieldbyname('cod_art').asstring),
-            trim(tabella_esa_01.fieldbyname('cod_listino').asstring)])
-            , []) then
+          if not tabella_01.locate('art_codice;' + campo_listino, vararrayof([trim(tabella_esa_01.fieldbyname('cod_art').asstring), trim(tabella_esa_01.fieldbyname('cod_listino').asstring)]), []) then
           begin
             tabella_01.append;
 
@@ -1932,13 +1895,13 @@ begin
             tabella_01.fieldbyname(campo_listino).asstring := tabella_esa_01.fieldbyname('cod_listino').asstring;
             tabella_01.fieldbyname('data_inizio').asdatetime := StrToDate('01/01/' + esercizio);
             tabella_01.fieldbyname('data_fine').asdatetime := StrToDate('31/12/2999');
-            tabella_01.fieldbyname('prezzo').asfloat := tabella_esa_01.fieldbyname('prz_listino').asfloat;
+            tabella_01.fieldbyname('prezzo').asFloat := tabella_esa_01.fieldbyname('prz_listino').asFloat;
 
-            if not((tabella_esa_01.fieldbyname('prc_Sconto1').asfloat = 0) or not(tabella_esa_01.fieldbyname('prc_Sconto2').asfloat = 0)) then
+            if not((tabella_esa_01.fieldbyname('prc_Sconto1').asFloat = 0) or not(tabella_esa_01.fieldbyname('prc_Sconto2').asFloat = 0)) then
             begin
-              query_02.close;
-              query_02.parambyname('sconto_01').asfloat := tabella_esa_01.fieldbyname('prc_sconto1').asfloat;
-              query_02.parambyname('sconto_02').asfloat := tabella_esa_01.fieldbyname('prc_sconto2').asfloat;
+              query_02.Close;
+              query_02.ParamByName('sconto_01').asFloat := tabella_esa_01.fieldbyname('prc_sconto1').asFloat;
+              query_02.ParamByName('sconto_02').asFloat := tabella_esa_01.fieldbyname('prc_sconto2').asFloat;
               query_02.open;
               if not query_02.eof then
               begin
@@ -1946,9 +1909,7 @@ begin
               end
               else
               begin
-                crea_tsm(
-                  tabella_esa_01.fieldbyname('prc_sconto1').asfloat,
-                  tabella_esa_01.fieldbyname('prc_sconto2').asfloat);
+                crea_tsm(tabella_esa_01.fieldbyname('prc_sconto1').asFloat, tabella_esa_01.fieldbyname('prc_sconto2').asFloat);
                 tabella_01.fieldbyname('tsm_codice').asstring := setta_lunghezza(tsm_codice, 4, 0);
               end;
             end;
@@ -1966,11 +1927,11 @@ begin
     tabella_esa_02.next;
   end;
 
-  tabella_01.close;
-  tabella_02.close;
-  tabella_esa_01.close;
-  tabella_esa_02.close;
-  tsm.close;
+  tabella_01.Close;
+  tabella_02.Close;
+  tabella_esa_01.Close;
+  tabella_esa_02.Close;
+  tsm.Close;
 
 end;
 
@@ -1999,40 +1960,40 @@ begin
   end;
 
   cancella_tabella('pni');
-  tabella_03.close;
+  tabella_03.Close;
   tabella_03.tablename := 'pni';
   tabella_03.open;
 
   cancella_tabella('pnr');
-  tabella_02.close;
+  tabella_02.Close;
   tabella_02.tablename := 'pnr';
   tabella_02.open;
 
   cancella_tabella('pnt');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'pnt';
   tabella_01.open;
 
   tabella_01_ds.DataSet := tabella_esa_02;
 
   tabella_esa_02.Close;
-  tabella_esa_02.Sql.Clear;
-  tabella_esa_02.Sql.Add('SELECT * from CG_PRINOTAR_CONT');
-  tabella_esa_02.Sql.Add('order by prg_prinota, prg_prinota_riga');
+  tabella_esa_02.sql.clear;
+  tabella_esa_02.sql.add('SELECT * from CG_PRINOTAR_CONT');
+  tabella_esa_02.sql.add('order by prg_prinota, prg_prinota_riga');
   tabella_esa_02.open;
 
   tabella_esa_03.Close;
-  tabella_esa_03.Sql.Clear;
-  tabella_esa_03.Sql.Add('SELECT * from CG_PRINOTAR_IVA');
-  tabella_esa_03.Sql.Add('where');
-  tabella_esa_03.Sql.Add('prg_prinota=:prg_prinota');
-  tabella_esa_03.Sql.Add('order by prg_prinota_riga');
+  tabella_esa_03.sql.clear;
+  tabella_esa_03.sql.add('SELECT * from CG_PRINOTAR_IVA');
+  tabella_esa_03.sql.add('where');
+  tabella_esa_03.sql.add('prg_prinota=:prg_prinota');
+  tabella_esa_03.sql.add('order by prg_prinota_riga');
 
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT * from CG_PRINOTAT');
-  tabella_esa_01.Sql.Add('where');
-  tabella_esa_01.Sql.Add('prg_prinota=:prg_prinota');
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT * from CG_PRINOTAT');
+  tabella_esa_01.sql.add('where');
+  tabella_esa_01.sql.add('prg_prinota=:prg_prinota');
 
   test_datas := '';
   test_numero_stringa := '';
@@ -2040,16 +2001,16 @@ begin
 
   while not tabella_esa_02.eof do
   begin
-    Application.ProcessMessages;
+    application.processmessages;
 
-    tabella_esa_01.close;
-    tabella_esa_01.parameters.parambyname('prg_prinota').value := tabella_esa_02.fieldbyname('prg_prinota').asinteger;
+    tabella_esa_01.Close;
+    tabella_esa_01.Parameters.ParamByName('prg_prinota').Value := tabella_esa_02.fieldbyname('prg_prinota').asInteger;
     tabella_esa_01.open;
 
-    if tabella_esa_02.fieldbyname('prg_prinota').asinteger <> progressivo then
+    if tabella_esa_02.fieldbyname('prg_prinota').asInteger <> progressivo then
     begin
       codice_clifor := '';
-      progressivo := tabella_esa_02.fieldbyname('prg_prinota').asinteger;
+      progressivo := tabella_esa_02.fieldbyname('prg_prinota').asInteger;
       crea_pnt(progressivo);
 
       test_datas := tabella_esa_01.fieldbyname('dat_registrazione').asstring;
@@ -2058,8 +2019,7 @@ begin
 
     crea_pnr(progressivo);
 
-    if (tabella_01.fieldbyname('cfg_tipo').asstring = 'C') or (tabella_01.fieldbyname('cfg_tipo').asstring = 'F') and
-      (tabella_01.fieldbyname('cfg_codice').asstring = '') then
+    if (tabella_01.fieldbyname('cfg_tipo').asstring = 'C') or (tabella_01.fieldbyname('cfg_tipo').asstring = 'F') and (tabella_01.fieldbyname('cfg_codice').asstring = '') then
     begin
       try
         IF codice_clifor = '' then
@@ -2076,10 +2036,10 @@ begin
     tabella_esa_02.next;
   end;
 
-  tabella_01.close;
-  tabella_02.close;
-  tabella_03.close;
-  tabella_esa_01.close;
+  tabella_01.Close;
+  tabella_02.Close;
+  tabella_03.Close;
+  tabella_esa_01.Close;
 
   // arc.attivazione_trigger(arc.arcdit, false, TRUE);
 end;
@@ -2093,26 +2053,26 @@ begin
   application.processmessages;
 
   // arc.attivazione_trigger(arc.arcdit, false, false);
-  tabella_03.close;
+  tabella_03.Close;
   tabella_03.tablename := 'pni';
   tabella_03.open;
 
   tabella_01_ds.DataSet := tabella_esa_01;
 
   tabella_esa_02.Close;
-  tabella_esa_02.Sql.Clear;
+  tabella_esa_02.sql.clear;
 
   tabella_esa_03.Close;
-  tabella_esa_03.Sql.Clear;
-  tabella_esa_03.Sql.Add('SELECT * from CG_PRINOTAR_IVA');
-  tabella_esa_03.Sql.Add('where');
-  tabella_esa_03.Sql.Add('prg_prinota=:prg_prinota');
-  tabella_esa_03.Sql.Add('order by prg_prinota_riga');
+  tabella_esa_03.sql.clear;
+  tabella_esa_03.sql.add('SELECT * from CG_PRINOTAR_IVA');
+  tabella_esa_03.sql.add('where');
+  tabella_esa_03.sql.add('prg_prinota=:prg_prinota');
+  tabella_esa_03.sql.add('order by prg_prinota_riga');
 
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT * from CG_PRINOTAT');
-  tabella_esa_01.Sql.Add('order by prg_prinota');
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT * from CG_PRINOTAT');
+  tabella_esa_01.sql.add('order by prg_prinota');
   tabella_esa_01.open;
 
   test_datas := '';
@@ -2121,17 +2081,17 @@ begin
 
   while not tabella_esa_01.eof do
   begin
-    Application.ProcessMessages;
+    application.processmessages;
 
-    crea_pni(tabella_esa_01.fieldbyname('prg_prinota').asinteger);
+    crea_pni(tabella_esa_01.fieldbyname('prg_prinota').asInteger);
 
     tabella_esa_01.next;
   end;
 
-  tabella_01.close;
-  tabella_02.close;
-  tabella_03.close;
-  tabella_esa_01.close;
+  tabella_01.Close;
+  tabella_02.Close;
+  tabella_03.Close;
+  tabella_esa_01.Close;
 
   // arc.attivazione_trigger(arc.arcdit, false, TRUE);
 end;
@@ -2142,27 +2102,24 @@ var
 begin
   cod_caucon := tabella_esa_01.fieldbyname('cod_caucon').asstring;
 
-  if (tabella_esa_01.fieldbyname('cod_attivita').asstring = '01') and
-    (tabella_esa_01.fieldbyname('num_reg_iva').asstring = '2') then
+  if (tabella_esa_01.fieldbyname('cod_attivita').asstring = '01') and (tabella_esa_01.fieldbyname('num_reg_iva').asstring = '2') then
   begin
     cod_caucon := cod_caucon + tabella_esa_01.fieldbyname('num_reg_iva').asstring;
   end;
 
-  if (tabella_esa_01.fieldbyname('cod_attivita').asstring = '02') and
-    (tabella_esa_01.fieldbyname('sig_serie_doc').asstring = '') then
+  if (tabella_esa_01.fieldbyname('cod_attivita').asstring = '02') and (tabella_esa_01.fieldbyname('sig_serie_doc').asstring = '') then
   begin
     cod_caucon := cod_caucon + tabella_esa_01.fieldbyname('cod_attivita').asstring;
   end;
 
-  if (tabella_esa_01.fieldbyname('cod_attivita').asstring = '02') and
-    (tabella_esa_01.fieldbyname('sig_serie_doc').asstring = 'BIS') then
+  if (tabella_esa_01.fieldbyname('cod_attivita').asstring = '02') and (tabella_esa_01.fieldbyname('sig_serie_doc').asstring = 'BIS') then
   begin
     cod_caucon := cod_caucon + '2B';
   end;
 
   tabella_01.append;
   tabella_01.fieldbyname('data_registrazione').asdatetime := tabella_esa_01.fieldbyname('dat_registrazione').asdatetime;
-  tabella_01.fieldbyname('progressivo').asinteger := tabella_esa_01.fieldbyname('prg_prinota').asinteger;
+  tabella_01.fieldbyname('progressivo').asInteger := tabella_esa_01.fieldbyname('prg_prinota').asInteger;
   tabella_01.fieldbyname('tco_codice').asstring := tabella_esa_01.fieldbyname('cod_caucon').asstring;
 
   // ------------------------------
@@ -2175,7 +2132,7 @@ begin
   // ------------------------------
 
   try
-    tabella_01.fieldbyname('numero_documento').asinteger := tabella_esa_01.fieldbyname('des_num_doc').asinteger;
+    tabella_01.fieldbyname('numero_documento').asInteger := tabella_esa_01.fieldbyname('des_num_doc').asInteger;
   except
     tabella_01.fieldbyname('descrizione').asstring := tabella_01.fieldbyname('descrizione').asstring + ' - nr doc:' + tabella_esa_01.fieldbyname('des_num_doc').asstring;
   end;
@@ -2198,7 +2155,7 @@ begin
     tabella_01.fieldbyname('data_competenza_iva').asdatetime := tabella_01.fieldbyname('data_registrazione').asdatetime;
   end;
 
-  tabella_01.fieldbyname('protocollo').asinteger := tabella_esa_01.fieldbyname('num_protocollo').asinteger;
+  tabella_01.fieldbyname('protocollo').asInteger := tabella_esa_01.fieldbyname('num_protocollo').asInteger;
   if tabella_01.fieldbyname('documento_iva').asstring = 'si' then
   begin
     if archivio.fieldbyname('tipo_registro_iva').asstring = 'vendite' then
@@ -2225,7 +2182,7 @@ begin
         begin
         tabella_01.fieldbyname('serie_documento').asstring := tabella_esa_01.fieldbyname('num_reg_iva').asstring;
         end;
-      *)
+ *)
 
     end
     else if archivio.fieldbyname('tipo_registro_iva').asstring = 'acquisti' then
@@ -2258,7 +2215,7 @@ begin
         end;
 
         end;
-      *)
+ *)
     end
     else if archivio.fieldbyname('tipo_registro_iva').asstring = 'corrispettivi' then
     begin
@@ -2273,7 +2230,7 @@ begin
 
   tabella_01.fieldbyname('tva_codice').asstring := tabella_esa_01.fieldbyname('cod_valuta').asstring;
   tabella_01.fieldbyname('ese_codice').asstring := tabella_esa_01.fieldbyname('num_esercizio').asstring;
-  tabella_01.fieldbyname('cambio').asfloat := tabella_esa_01.fieldbyname('cmb_valuta').asfloat;
+  tabella_01.fieldbyname('cambio').asFloat := tabella_esa_01.fieldbyname('cmb_valuta').asFloat;
 
   tabella_01.fieldbyname('descrizione').asstring := tabella_01.fieldbyname('descrizione').asstring + ' cod.attivita ' + tabella_esa_01.fieldbyname('cod_attivita').asstring + ' serie doc' + tabella_esa_01.fieldbyname('sig_serie_doc').asstring;
   try
@@ -2297,10 +2254,10 @@ procedure TCONVEREADY.crea_pnr(progressivo: integer);
 begin
   tabella_02.append;
 
-  tabella_02.fieldbyname('progressivo').asfloat := tabella_esa_01.fieldbyname('prg_prinota').asinteger;
+  tabella_02.fieldbyname('progressivo').asFloat := tabella_esa_01.fieldbyname('prg_prinota').asInteger;
   riga := riga + 1;
 
-  tabella_02.fieldbyname('riga').asinteger := tabella_esa_02.fieldbyname('num_riga').asinteger;
+  tabella_02.fieldbyname('riga').asInteger := tabella_esa_02.fieldbyname('num_riga').asInteger;
 
   // ----------------------------------------------------------
   // il cfg_ese viene inserito nel trigger
@@ -2357,17 +2314,17 @@ begin
 
   if tabella_esa_02.fieldbyname('ind_da_av').asstring = 'D' then
   begin
-    tabella_02.fieldbyname('importo_dare').asfloat := tabella_esa_02.fieldbyname('val_importo_val').asfloat;
-    tabella_02.fieldbyname('importo_dare_euro').asfloat := tabella_esa_02.fieldbyname('val_importo').asfloat;
-    tabella_02.fieldbyname('importo_avere').asfloat := 0;
-    tabella_02.fieldbyname('importo_avere_euro').asfloat := 0;
+    tabella_02.fieldbyname('importo_dare').asFloat := tabella_esa_02.fieldbyname('val_importo_val').asFloat;
+    tabella_02.fieldbyname('importo_dare_euro').asFloat := tabella_esa_02.fieldbyname('val_importo').asFloat;
+    tabella_02.fieldbyname('importo_avere').asFloat := 0;
+    tabella_02.fieldbyname('importo_avere_euro').asFloat := 0;
   end
   else
   begin
-    tabella_02.fieldbyname('importo_dare').asfloat := 0;
-    tabella_02.fieldbyname('importo_dare_euro').asfloat := 0;
-    tabella_02.fieldbyname('importo_avere').asfloat := tabella_esa_02.fieldbyname('val_importo_val').asfloat;
-    tabella_02.fieldbyname('importo_avere_euro').asfloat := tabella_esa_02.fieldbyname('val_importo').asfloat;
+    tabella_02.fieldbyname('importo_dare').asFloat := 0;
+    tabella_02.fieldbyname('importo_dare_euro').asFloat := 0;
+    tabella_02.fieldbyname('importo_avere').asFloat := tabella_esa_02.fieldbyname('val_importo_val').asFloat;
+    tabella_02.fieldbyname('importo_avere_euro').asFloat := tabella_esa_02.fieldbyname('val_importo').asFloat;
   end;
 
   tabella_02.fieldbyname('descrizione').asstring := trim(tabella_esa_02.fieldbyname('des_aggiuntiva').asstring);
@@ -2378,33 +2335,31 @@ end;
 
 procedure TCONVEREADY.crea_pni;
 begin
-  tabella_esa_03.close;
-  tabella_esa_03.parameters.parambyname('prg_prinota').value := tabella_esa_01.fieldbyname('prg_prinota').asinteger;
+  tabella_esa_03.Close;
+  tabella_esa_03.Parameters.ParamByName('prg_prinota').Value := tabella_esa_01.fieldbyname('prg_prinota').asInteger;
   tabella_esa_03.open;
 
   while not tabella_esa_03.eof do
   begin
 
-    if not tabella_03.locate('progressivo;riga', vararrayof([tabella_esa_03.fieldbyname('prg_prinota').asinteger, tabella_esa_03.fieldbyname('prg_prinota_riga').asinteger]), []) then
+    if not tabella_03.locate('progressivo;riga', vararrayof([tabella_esa_03.fieldbyname('prg_prinota').asInteger, tabella_esa_03.fieldbyname('prg_prinota_riga').asInteger]), []) then
     begin
       tabella_03.append;
 
-      tabella_03.fieldbyname('progressivo').asfloat := tabella_esa_03.fieldbyname('prg_prinota').asinteger;
-      tabella_03.fieldbyname('riga').asinteger := tabella_esa_03.fieldbyname('prg_prinota_riga').asinteger;
+      tabella_03.fieldbyname('progressivo').asFloat := tabella_esa_03.fieldbyname('prg_prinota').asInteger;
+      tabella_03.fieldbyname('riga').asInteger := tabella_esa_03.fieldbyname('prg_prinota_riga').asInteger;
 
       tabella_03.fieldbyname('tiv_codice').asstring := tabella_esa_03.fieldbyname('cod_iva').asstring;
-      tabella_03.fieldbyname('importo_imponibile').asfloat := tabella_esa_03.fieldbyname('val_imponibile_val').asfloat;
-      tabella_03.fieldbyname('importo_imponibile_euro').asfloat := tabella_esa_03.fieldbyname('val_imponibile').asfloat;
+      tabella_03.fieldbyname('importo_imponibile').asFloat := tabella_esa_03.fieldbyname('val_imponibile_val').asFloat;
+      tabella_03.fieldbyname('importo_imponibile_euro').asFloat := tabella_esa_03.fieldbyname('val_imponibile').asFloat;
 
-      tabella_03.fieldbyname('importo_iva').asfloat := tabella_esa_03.fieldbyname('val_iva_val').asfloat;
-      tabella_03.fieldbyname('importo_iva_euro').asfloat := tabella_esa_03.fieldbyname('val_iva').asfloat;
+      tabella_03.fieldbyname('importo_iva').asFloat := tabella_esa_03.fieldbyname('val_iva_val').asFloat;
+      tabella_03.fieldbyname('importo_iva_euro').asFloat := tabella_esa_03.fieldbyname('val_iva').asFloat;
 
       read_tabella(arc.arcdit, 'tiv', 'codice', tabella_03.fieldbyname('tiv_codice').asstring);
-      tabella_03.fieldbyname('importo_indetraibile').asfloat := arrotonda
-        (tabella_03.fieldbyname('importo_iva').asfloat * archivio.fieldbyname('indetraibile').asfloat / 100);
+      tabella_03.fieldbyname('importo_indetraibile').asFloat := arrotonda(tabella_03.fieldbyname('importo_iva').asFloat * archivio.fieldbyname('indetraibile').asFloat / 100);
 
-      tabella_03.fieldbyname('importo_indetraibile_euro').asfloat := arrotonda
-        (tabella_03.fieldbyname('importo_iva').asfloat * archivio.fieldbyname('indetraibile').asfloat / 100);
+      tabella_03.fieldbyname('importo_indetraibile_euro').asFloat := arrotonda(tabella_03.fieldbyname('importo_iva').asFloat * archivio.fieldbyname('indetraibile').asFloat / 100);
 
       try
         tabella_03.post;
@@ -2420,8 +2375,7 @@ end;
 
 procedure TCONVEREADY.converti_par;
 var
-  tipo_cliente,
-    codice_clifor: string;
+  tipo_cliente, codice_clifor: string;
   data_doc: TDateTime;
   numero_doc: integer;
   serie_doc: string;
@@ -2436,60 +2390,60 @@ begin
   application.processmessages;
 
   cancella_tabella('pat');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'pat';
   tabella_01.open;
 
   cancella_tabella('pas');
-  tabella_02.close;
+  tabella_02.Close;
   tabella_02.tablename := 'pas';
   tabella_02.open;
 
-  tpa.close;
+  tpa.Close;
   tpa.open;
 
-  tabella_01_ds.Dataset := tabella_esa_01;
+  tabella_01_ds.DataSet := tabella_esa_01;
 
   tabella_esa_03.Close;
-  tabella_esa_03.Sql.Clear;
-  tabella_esa_03.Sql.Add('SELECT * FROM CO_PAGAMENTI T');
-  tabella_esa_03.Sql.Add('where');
-  tabella_esa_03.Sql.Add('T.prg_scadenza=:prg_scadenza');
-  tabella_esa_03.Sql.Add('order by T.prg_pagamento');
+  tabella_esa_03.sql.clear;
+  tabella_esa_03.sql.add('SELECT * FROM CO_PAGAMENTI T');
+  tabella_esa_03.sql.add('where');
+  tabella_esa_03.sql.add('T.prg_scadenza=:prg_scadenza');
+  tabella_esa_03.sql.add('order by T.prg_pagamento');
 
   tabella_esa_02.Close;
-  tabella_esa_02.Sql.Clear;
-  tabella_esa_02.Sql.Add('SELECT T.*, C.cod_pag from CG_PRINOTAT T');
-  tabella_esa_02.Sql.Add('INNER JOIN CO_CLIFOR C ON C.ind_clifor=T.ind_clifor and C.cod_clifor=T.cod_clifor');
-  tabella_esa_02.Sql.Add('where');
-  tabella_esa_02.Sql.Add('T.ind_clifor=:ind_clifor and ');
-  tabella_esa_02.Sql.Add('T.cod_clifor=:cod_clifor and ');
-  tabella_esa_02.Sql.Add('T.dat_doc=:dat_doc  and ');
-  tabella_esa_02.Sql.Add('T.des_num_doc=:des_num_doc ');
+  tabella_esa_02.sql.clear;
+  tabella_esa_02.sql.add('SELECT T.*, C.cod_pag from CG_PRINOTAT T');
+  tabella_esa_02.sql.add('INNER JOIN CO_CLIFOR C ON C.ind_clifor=T.ind_clifor and C.cod_clifor=T.cod_clifor');
+  tabella_esa_02.sql.add('where');
+  tabella_esa_02.sql.add('T.ind_clifor=:ind_clifor and ');
+  tabella_esa_02.sql.add('T.cod_clifor=:cod_clifor and ');
+  tabella_esa_02.sql.add('T.dat_doc=:dat_doc  and ');
+  tabella_esa_02.sql.add('T.des_num_doc=:des_num_doc ');
 
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT');
-  tabella_esa_01.Sql.Add('CO.cod_caucon, CO.num_reg_iva, CP.prg_prinota, ');
-  tabella_esa_01.Sql.Add('T.dat_doc,');
-  tabella_esa_01.Sql.Add('T.des_num_doc,');
-  tabella_esa_01.Sql.Add('T.sig_serie_doc, T.cod_valuta, T.cmb_valuta, C.cod_pag, ');
-  tabella_esa_01.Sql.Add('p.*, s.*');
-  tabella_esa_01.Sql.Add('from CO_SCADENZE s');
-  tabella_esa_01.Sql.Add('inner join CO_PARTITE p ON p.prg_partita=s.prg_partita');
-  tabella_esa_01.Sql.Add('inner join CO_DOCUMENTI CO on CO.prg_documento=s.prg_documento');
-  tabella_esa_01.Sql.Add('inner join CO_DOCUMENTI_PN CP on CP.prg_documento=s.prg_documento');
-  tabella_esa_01.Sql.Add('left join CG_PRINOTAT T on T.prg_prinota=CP.prg_prinota');
-  tabella_esa_01.Sql.Add('inner join CO_CLIFOR C ON C.ind_clifor=p.ind_clifor and C.cod_clifor=p.cod_clifor');
-  tabella_esa_01.Sql.Add('where ');
-  tabella_esa_01.Sql.Add('CO.num_reg_iva is not null');
-  tabella_esa_01.Sql.Add('order by s.prg_partita, s.num_riga');
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT');
+  tabella_esa_01.sql.add('CO.cod_caucon, CO.num_reg_iva, CP.prg_prinota, ');
+  tabella_esa_01.sql.add('T.dat_doc,');
+  tabella_esa_01.sql.add('T.des_num_doc,');
+  tabella_esa_01.sql.add('T.sig_serie_doc, T.cod_valuta, T.cmb_valuta, C.cod_pag, ');
+  tabella_esa_01.sql.add('p.*, s.*');
+  tabella_esa_01.sql.add('from CO_SCADENZE s');
+  tabella_esa_01.sql.add('inner join CO_PARTITE p ON p.prg_partita=s.prg_partita');
+  tabella_esa_01.sql.add('inner join CO_DOCUMENTI CO on CO.prg_documento=s.prg_documento');
+  tabella_esa_01.sql.add('inner join CO_DOCUMENTI_PN CP on CP.prg_documento=s.prg_documento');
+  tabella_esa_01.sql.add('left join CG_PRINOTAT T on T.prg_prinota=CP.prg_prinota');
+  tabella_esa_01.sql.add('inner join CO_CLIFOR C ON C.ind_clifor=p.ind_clifor and C.cod_clifor=p.cod_clifor');
+  tabella_esa_01.sql.add('where ');
+  tabella_esa_01.sql.add('CO.num_reg_iva is not null');
+  tabella_esa_01.sql.add('order by s.prg_partita, s.num_riga');
   tabella_esa_01.open;
 
   progressivo := 0;
   while not tabella_esa_01.eof do
   begin
-    Application.ProcessMessages;
+    application.processmessages;
 
     tipo_cliente := tabella_esa_01.fieldbyname('ind_clifor').asstring;
     codice_clifor := tabella_esa_01.fieldbyname('cod_clifor').asstring;
@@ -2503,13 +2457,13 @@ begin
       if nr_col1 > 0 then
       begin
 
-        Numero_doc := strtoint(copy(tabella_esa_01.fieldbyname('des_partita').asstring, nr_col1 + 5, nr_col2 - 1 - nr_col1 - 5));
+        numero_doc := strtoint(copy(tabella_esa_01.fieldbyname('des_partita').asstring, nr_col1 + 5, nr_col2 - 1 - nr_col1 - 5));
       end;
 
     except
-      on E: Exception do
+      on E: exception do
       begin
-        Numero_doc := 0;
+        numero_doc := 0;
         descrizione := tabella_esa_01.fieldbyname('des_partita').asstring;
       end;
     end;
@@ -2519,11 +2473,11 @@ begin
 
       if nr_col2 > 0 then
       begin
-        data_doc := strtodate(copy(tabella_esa_01.fieldbyname('des_partita').asstring, nr_col2 + 4, 10));
+        data_doc := StrToDate(copy(tabella_esa_01.fieldbyname('des_partita').asstring, nr_col2 + 4, 10));
       end;
 
     except
-      on E: Exception do
+      on E: exception do
       begin
         data_doc := 0;
       end;
@@ -2536,14 +2490,14 @@ begin
       tabella_esa_02.parameters.parambyname('dat_doc').value := data_doc;
       tabella_esa_02.parameters.parambyname('des_num_doc').value := numero_doc;
       tabella_esa_02.open;
-    *)
-    Serie_doc := trim(tabella_esa_01.fieldbyname('sig_serie_doc').asString);
+ *)
+    serie_doc := trim(tabella_esa_01.fieldbyname('sig_serie_doc').asstring);
 
     progressivo := progressivo + 1;
     tabella_01.append;
-    tabella_01.fieldbyname('progressivo').asinteger := tabella_esa_01.fieldbyname('prg_scadenza').asinteger;
+    tabella_01.fieldbyname('progressivo').asInteger := tabella_esa_01.fieldbyname('prg_scadenza').asInteger;
     tabella_01.fieldbyname('descrizione').asstring := descrizione;
-    tabella_01.fieldbyname('pnr_progressivo').asinteger := tabella_esa_01.fieldbyname('prg_partita').asinteger;
+    tabella_01.fieldbyname('pnr_progressivo').asInteger := tabella_esa_01.fieldbyname('prg_partita').asInteger;
 
     tabella_01.fieldbyname('cfg_tipo').asstring := tipo_cliente;
     if (tipo_cliente = 'C') then
@@ -2575,35 +2529,35 @@ begin
       tabella_01.fieldbyname('cfg_codice').asstring := cli_for;
     end;
 
-    if (tabella_esa_01.fieldbyname('val_da_pagare').asfloat < 0) and (tabella_esa_01.fieldbyname('cod_caucon').asstring <> 'NC') then
+    if (tabella_esa_01.fieldbyname('val_da_pagare').asFloat < 0) and (tabella_esa_01.fieldbyname('cod_caucon').asstring <> 'NC') then
     begin
-      tabella_01.fieldbyname('importo_dovuto').asfloat := tabella_esa_01.fieldbyname('val_da_pagare_doc').asfloat * -1;
-      tabella_01.fieldbyname('importo_dovuto_euro').asfloat := tabella_esa_01.fieldbyname('val_da_pagare').asfloat * -1;
+      tabella_01.fieldbyname('importo_dovuto').asFloat := tabella_esa_01.fieldbyname('val_da_pagare_doc').asFloat * -1;
+      tabella_01.fieldbyname('importo_dovuto_euro').asFloat := tabella_esa_01.fieldbyname('val_da_pagare').asFloat * -1;
     end
     else
     begin
-      tabella_01.fieldbyname('importo_dovuto').asfloat := tabella_esa_01.fieldbyname('val_da_pagare_doc').asfloat;
-      tabella_01.fieldbyname('importo_dovuto_euro').asfloat := tabella_esa_01.fieldbyname('val_da_pagare').asfloat;
+      tabella_01.fieldbyname('importo_dovuto').asFloat := tabella_esa_01.fieldbyname('val_da_pagare_doc').asFloat;
+      tabella_01.fieldbyname('importo_dovuto_euro').asFloat := tabella_esa_01.fieldbyname('val_da_pagare').asFloat;
     end;
 
-    tabella_01.fieldbyname('importo_pagato').asfloat := 0;
-    tabella_01.fieldbyname('importo_pagato_euro').asfloat := 0;
+    tabella_01.fieldbyname('importo_pagato').asFloat := 0;
+    tabella_01.fieldbyname('importo_pagato_euro').asFloat := 0;
 
     tabella_01.fieldbyname('data_registrazione').asdatetime := tabella_esa_01.fieldbyname('dat_doc').asdatetime;
     try
-      tabella_01.fieldbyname('numero_documento').asinteger := tabella_esa_01.fieldbyname('des_num_doc').asinteger;
+      tabella_01.fieldbyname('numero_documento').asInteger := tabella_esa_01.fieldbyname('des_num_doc').asInteger;
     except
     end;
     tabella_01.fieldbyname('data_documento').asdatetime := tabella_esa_01.fieldbyname('dat_doc').asdatetime;
     tabella_01.fieldbyname('serie_documento').asstring := trim(tabella_esa_01.fieldbyname('sig_serie_doc').asstring);
     tabella_01.fieldbyname('data_scadenza').asdatetime := tabella_esa_01.fieldbyname('dat_scadenza').asdatetime;
     tabella_01.fieldbyname('tva_codice').asstring := tabella_esa_01.fieldbyname('cod_valuta').asstring;
-    tabella_01.fieldbyname('cambio').asfloat := tabella_esa_01.fieldbyname('cmb_valuta').asfloat;
+    tabella_01.fieldbyname('cambio').asFloat := tabella_esa_01.fieldbyname('cmb_valuta').asFloat;
 
     tabella_01.fieldbyname('tpa_codice').asstring := tabella_esa_01.fieldbyname('cod_pag').asstring;
 
     read_tabella(arc.arcdit, 'tpa', 'codice', tabella_esa_01.fieldbyname('cod_pag').asstring, 'tts_codice_fisse');
-    tabella_01.fieldbyname('tts_codice').asString := archivio.fieldbyname('tts_codice_fisse').asstring;
+    tabella_01.fieldbyname('tts_codice').asstring := archivio.fieldbyname('tts_codice_fisse').asstring;
 
     if tabella_esa_01.fieldbyname('cod_agenzia').asstring <> '' then
     begin
@@ -2618,10 +2572,10 @@ begin
 
     nr_riga := 0;
 
-    if (tabella_esa_01.fieldbyname('val_pagato').asfloat <> 0) then
+    if (tabella_esa_01.fieldbyname('val_pagato').asFloat <> 0) then
     begin
-      tabella_esa_03.close;
-      tabella_esa_03.parameters.parambyname('prg_scadenza').value := tabella_esa_01.fieldbyname('prg_scadenza').asinteger;
+      tabella_esa_03.Close;
+      tabella_esa_03.Parameters.ParamByName('prg_scadenza').Value := tabella_esa_01.fieldbyname('prg_scadenza').asInteger;
       tabella_esa_03.open;
 
       while not tabella_esa_03.eof do
@@ -2630,42 +2584,42 @@ begin
 
         tabella_02.append;
 
-        tabella_02.fieldbyname('progressivo').asfloat := tabella_esa_01.fieldbyname('prg_scadenza').asinteger;
-        tabella_02.fieldbyname('riga').asinteger := nr_riga;
+        tabella_02.fieldbyname('progressivo').asFloat := tabella_esa_01.fieldbyname('prg_scadenza').asInteger;
+        tabella_02.fieldbyname('riga').asInteger := nr_riga;
         tabella_02.fieldbyname('data_registrazione').asdatetime := data_doc;
 
-        if (tabella_esa_03.fieldbyname('val_pagato').asfloat < 0) and (tabella_esa_01.fieldbyname('cod_caucon').asstring <> 'NC') then
+        if (tabella_esa_03.fieldbyname('val_pagato').asFloat < 0) and (tabella_esa_01.fieldbyname('cod_caucon').asstring <> 'NC') then
         begin
-          tabella_02.fieldbyname('importo_pagato').asfloat := tabella_esa_03.fieldbyname('val_pagato_doc').asfloat * -1;
-          tabella_02.fieldbyname('importo_pagato_euro').asfloat := tabella_esa_03.fieldbyname('val_pagato').asfloat * -1;
+          tabella_02.fieldbyname('importo_pagato').asFloat := tabella_esa_03.fieldbyname('val_pagato_doc').asFloat * -1;
+          tabella_02.fieldbyname('importo_pagato_euro').asFloat := tabella_esa_03.fieldbyname('val_pagato').asFloat * -1;
         end
-        else if (tabella_esa_03.fieldbyname('val_pagato').asfloat > 0) and (tabella_esa_01.fieldbyname('cod_caucon').asstring = 'NC') then
+        else if (tabella_esa_03.fieldbyname('val_pagato').asFloat > 0) and (tabella_esa_01.fieldbyname('cod_caucon').asstring = 'NC') then
         begin
-          tabella_02.fieldbyname('importo_pagato').asfloat := tabella_esa_03.fieldbyname('val_pagato_doc').asfloat * -1;
-          tabella_02.fieldbyname('importo_pagato_euro').asfloat := tabella_esa_03.fieldbyname('val_pagato').asfloat * -1;
+          tabella_02.fieldbyname('importo_pagato').asFloat := tabella_esa_03.fieldbyname('val_pagato_doc').asFloat * -1;
+          tabella_02.fieldbyname('importo_pagato_euro').asFloat := tabella_esa_03.fieldbyname('val_pagato').asFloat * -1;
         end
 
         else
         begin
-          tabella_02.fieldbyname('importo_pagato').asfloat := tabella_esa_03.fieldbyname('val_pagato_doc').asfloat;
-          tabella_02.fieldbyname('importo_pagato_euro').asfloat := tabella_esa_03.fieldbyname('val_pagato').asfloat;
+          tabella_02.fieldbyname('importo_pagato').asFloat := tabella_esa_03.fieldbyname('val_pagato_doc').asFloat;
+          tabella_02.fieldbyname('importo_pagato_euro').asFloat := tabella_esa_03.fieldbyname('val_pagato').asFloat;
         end;
 
         tabella_02.post;
         tabella_esa_03.next;
       end;
-      tabella_esa_03.close;
+      tabella_esa_03.Close;
 
     end;
 
-    tabella_esa_01.Next;
+    tabella_esa_01.next;
 
   end; // while
 
-  tpa.close;
-  tabella_01.close;
-  tabella_02.close;
-  tabella_esa_01.close;
+  tpa.Close;
+  tabella_01.Close;
+  tabella_02.Close;
+  tabella_esa_01.Close;
   v_conferma.enabled := true;
 
 end;
@@ -2711,16 +2665,16 @@ begin
   application.processmessages;
 
   cancella_tabella('tva');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'tva';
   tabella_01.open;
 
-  tabella_01_ds.Dataset := tabella_01;
+  tabella_01_ds.DataSet := tabella_01;
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT * FROM CA_VALUTE');
-  tabella_esa_01.Sql.Add('order by cod_valuta');
-  tabella_esa_01.Open;
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT * FROM CA_VALUTE');
+  tabella_esa_01.sql.add('order by cod_valuta');
+  tabella_esa_01.open;
 
   while not tabella_esa_01.eof do
   begin
@@ -2728,22 +2682,22 @@ begin
 
     tabella_01.append;
 
-    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.FieldByName('cod_valuta').asstring);
-    tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.FieldByName('des_valuta').AsString);
-    tabella_01.fieldbyname('cambio').asFloat := tabella_esa_01.FieldByName('cmb_cambio_paniere').AsFloat;
-    tabella_01.fieldbyname('codice_iso').asstring := tabella_esa_01.FieldByName('cod_iso').asstring;
+    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.fieldbyname('cod_valuta').asstring);
+    tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.fieldbyname('des_valuta').asstring);
+    tabella_01.fieldbyname('cambio').asFloat := tabella_esa_01.fieldbyname('cmb_cambio_paniere').asFloat;
+    tabella_01.fieldbyname('codice_iso').asstring := tabella_esa_01.fieldbyname('cod_iso').asstring;
     if tabella_01.fieldbyname('codice_iso').asstring = '' then
     begin
-      tabella_01.fieldbyname('codice_iso').asstring := tabella_esa_01.FieldByName('sig_valuta').asstring;
+      tabella_01.fieldbyname('codice_iso').asstring := tabella_esa_01.fieldbyname('sig_valuta').asstring;
     end;
 
     tabella_01.post;
 
-    tabella_esa_01.Next;
+    tabella_esa_01.next;
   end;
 
-  tabella_01.close;
-  tabella_esa_01.close;
+  tabella_01.Close;
+  tabella_esa_01.Close;
 end;
 
 procedure TCONVEREADY.converti_tiv;
@@ -2754,38 +2708,38 @@ begin
   application.processmessages;
 
   cancella_tabella('tiv');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'tiv';
   tabella_01.open;
 
-  tabella_01_ds.Dataset := tabella_01;
+  tabella_01_ds.DataSet := tabella_01;
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT * FROM CA_IVA');
-  tabella_esa_01.Sql.Add('ORDER BY cod_iva');
-  tabella_esa_01.Open;
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT * FROM CA_IVA');
+  tabella_esa_01.sql.add('ORDER BY cod_iva');
+  tabella_esa_01.open;
 
   while not tabella_esa_01.eof do
   begin
     tabella_01.append;
 
-    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.FieldByName('cod_iva').AsString);
-    tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.FieldByName('des_iva').AsString);
-    tabella_01.fieldbyname('percentuale').asfloat := tabella_esa_01.FieldByName('prc_iva').AsFloat;
-    tabella_01.fieldbyname('indetraibile').asfloat := tabella_esa_01.FieldByName('prc_indetraibile').AsFloat;
+    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.fieldbyname('cod_iva').asstring);
+    tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.fieldbyname('des_iva').asstring);
+    tabella_01.fieldbyname('percentuale').asFloat := tabella_esa_01.fieldbyname('prc_iva').asFloat;
+    tabella_01.fieldbyname('indetraibile').asFloat := tabella_esa_01.fieldbyname('prc_indetraibile').asFloat;
 
-    if tabella_esa_01.FieldByName('cod_iva_vent').AsString <> '' then
+    if tabella_esa_01.fieldbyname('cod_iva_vent').asstring <> '' then
     begin
-      tabella_01.fieldbyname('tiv_codice_ventilazione').asString := tabella_esa_01.FieldByName('cod_iva_vent').AsString;
+      tabella_01.fieldbyname('tiv_codice_ventilazione').asstring := tabella_esa_01.fieldbyname('cod_iva_vent').asstring;
     end;
 
     tabella_01.post;
 
-    tabella_esa_01.Next;
+    tabella_esa_01.next;
   end;
 
-  tabella_01.close;
-  tabella_esa_01.close;
+  tabella_01.Close;
+  tabella_esa_01.Close;
 end;
 
 procedure TCONVEREADY.converti_tna;
@@ -2794,16 +2748,16 @@ begin
   application.processmessages;
 
   cancella_tabella('tna');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'tna';
   tabella_01.open;
 
-  tabella_01_ds.Dataset := tabella_01;
+  tabella_01_ds.DataSet := tabella_01;
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT * FROM CA_NAZIONI');
-  tabella_esa_01.Sql.Add('order by cod_naz');
-  tabella_esa_01.Open;
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT * FROM CA_NAZIONI');
+  tabella_esa_01.sql.add('order by cod_naz');
+  tabella_esa_01.open;
 
   while not tabella_esa_01.eof do
   begin
@@ -2811,10 +2765,10 @@ begin
 
     tabella_01.append;
 
-    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.FieldByName('cod_naz').AsString);
-    tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.FieldByName('des_naz').AsString);
-    tabella_01.fieldbyname('codice_iso').asstring := tabella_esa_01.FieldByName('sig_iso').AsString;
-    tabella_01.fieldbyname('tva_codice').asstring := tabella_esa_01.FieldByName('cod_valuta').AsString;
+    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.fieldbyname('cod_naz').asstring);
+    tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.fieldbyname('des_naz').asstring);
+    tabella_01.fieldbyname('codice_iso').asstring := tabella_esa_01.fieldbyname('sig_iso').asstring;
+    tabella_01.fieldbyname('tva_codice').asstring := tabella_esa_01.fieldbyname('cod_valuta').asstring;
     if tabella_01.fieldbyname('tva_codice').asstring = '' then
     begin
       tabella_01.fieldbyname('tva_codice').asstring := divisa_di_conto;
@@ -2822,11 +2776,11 @@ begin
 
     tabella_01.post;
 
-    tabella_esa_01.Next;
+    tabella_esa_01.next;
   end;
 
-  tabella_01.close;
-  tabella_esa_01.close;
+  tabella_01.Close;
+  tabella_esa_01.Close;
 
 end;
 
@@ -2856,22 +2810,22 @@ begin
     query_02.sql.add('order by esa_codice');
     query_02.ReadOnly := false;
     query_02.open;
-  *)
+ *)
   cancella_tabella('tag');
   // cancella_tabella('esa_tag');
 
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'tag';
   tabella_01.open;
 
-  tabella_01_ds.Dataset := tabella_01;
+  tabella_01_ds.DataSet := tabella_01;
 
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT C.*, A.* FROM CO_AGENTI C');
-  tabella_esa_01.Sql.Add('INNER JOIN CA_ANAGRAFICHE A on A.cod_anagra=C.cod_agente');
-  tabella_esa_01.Sql.Add('order by cod_agente');
-  tabella_esa_01.Open;
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT C.*, A.* FROM CO_AGENTI C');
+  tabella_esa_01.sql.add('INNER JOIN CA_ANAGRAFICHE A on A.cod_anagra=C.cod_agente');
+  tabella_esa_01.sql.add('order by cod_agente');
+  tabella_esa_01.open;
 
   tabella_01.append;
   tabella_01.fieldbyname('codice').asstring := '0000';
@@ -2884,22 +2838,22 @@ begin
     application.processmessages;
     i := i + 1;
 
-    if tabella_esa_01.Locate('Codice_anagrafica', copy(tabella_esa_01.FieldByName('cod_anagra').AsString, 3, 4), []) then
+    if tabella_esa_01.locate('Codice_anagrafica', copy(tabella_esa_01.fieldbyname('cod_anagra').asstring, 3, 4), []) then
     begin
       tabella_01.append;
-      tabella_01.fieldbyname('codice').asstring := copy(tabella_esa_01.FieldByName('cod_anagra').AsString, 3, 4);
-      tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.FieldByName('Ragione_sociale').AsString);
+      tabella_01.fieldbyname('codice').asstring := copy(tabella_esa_01.fieldbyname('cod_anagra').asstring, 3, 4);
+      tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.fieldbyname('Ragione_sociale').asstring);
       tabella_01.post;
     end;
 
-    tabella_esa_01.Next;
+    tabella_esa_01.next;
   end;
 
-  query.close;
-  query_02.close;
-  tabella_01.close;
-  tabella_esa_01.close;
-  tabella_esa_02.close;
+  query.Close;
+  query_02.Close;
+  tabella_01.Close;
+  tabella_esa_01.Close;
+  tabella_esa_02.Close;
 end;
 
 procedure TCONVEREADY.converti_tcm;
@@ -2911,24 +2865,24 @@ begin
   application.processmessages;
 
   cancella_tabella('tcm');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'tcm';
   tabella_01.open;
 
-  tabella_01_ds.Dataset := tabella_01;
+  tabella_01_ds.DataSet := tabella_01;
 
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT * FROM MG_GRUMERC');
-  tabella_esa_01.Sql.Add('ORDER BY cod_grumerc');
-  tabella_esa_01.Open;
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT * FROM MG_GRUMERC');
+  tabella_esa_01.sql.add('ORDER BY cod_grumerc');
+  tabella_esa_01.open;
 
   i := 0;
   while not tabella_esa_01.eof do
   begin
     application.processmessages;
 
-    codice := tabella_esa_01.FieldByName('cod_grumerc').AsString;
+    codice := tabella_esa_01.fieldbyname('cod_grumerc').asstring;
 
     if codice <> '' then
     begin
@@ -2936,19 +2890,19 @@ begin
 
       tabella_01.append;
       tabella_01.fieldbyname('codice').asstring := codice;
-      tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.FieldByName('des_grumerc').AsString);
+      tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.fieldbyname('des_grumerc').asstring);
 
       tabella_01.post;
 
     end;
-    tabella_esa_01.Next;
+    tabella_esa_01.next;
   end;
 
-  query.close;
-  query_02.close;
-  tabella_01.close;
-  tabella_02.close;
-  tabella_esa_01.close;
+  query.Close;
+  query_02.Close;
+  tabella_01.Close;
+  tabella_02.Close;
+  tabella_esa_01.Close;
 
 end;
 
@@ -2963,39 +2917,39 @@ begin
   cancella_tabella('tgm');
 
   try
-    tabella_01.close;
+    tabella_01.Close;
     tabella_01.sql.clear;
     tabella_01.sql.add('alter table tgm ');
     tabella_01.sql.add('add cod_grumerc varchar(3) default '''' ');
-    tabella_01.execsql;
+    tabella_01.ExecSQL;
   except
   end;
 
   try
-    tabella_01.close;
+    tabella_01.Close;
     tabella_01.tablename := '';
     tabella_01.sql.clear;
     tabella_01.sql.add(' alter table tgm ');
     tabella_01.sql.add(' add  cod_sgrumerc varchar(3) default ''''  ');
-    tabella_01.execsql;
+    tabella_01.ExecSQL;
 
   except
   end;
 
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.sql.clear;
   tabella_01.sql.add('select * from tgm');
   tabella_01.sql.add('where');
   tabella_01.sql.add('codice=:codice ');
 
-  tabella_esa_01.close;
+  tabella_esa_01.Close;
   tabella_esa_01.sql.clear;
   tabella_esa_01.sql.add('select * from MG_SGRUMERC');
   tabella_esa_01.sql.add('order by cod_grumerc, cod_sgrumerc');
   tabella_esa_01.open;
 
   i := 0;
-  tabella_01_ds.dataset := tabella_esa_01;
+  tabella_01_ds.DataSet := tabella_esa_01;
   while not tabella_esa_01.eof do
   begin
     application.processmessages;
@@ -3004,8 +2958,8 @@ begin
 
     codice := setta_lunghezza(inttostr(i), 4, true, '0');
 
-    tabella_01.close;
-    tabella_01.parambyname('codice').asstring := codice;
+    tabella_01.Close;
+    tabella_01.ParamByName('codice').asstring := codice;
     tabella_01.open;
     if tabella_01.eof then
     begin
@@ -3020,7 +2974,7 @@ begin
     tabella_esa_01.next;
   end;
 
-  tabella_01.close;
+  tabella_01.Close;
 
 end;
 
@@ -3030,16 +2984,16 @@ begin
   application.processmessages;
 
   cancella_tabella('tma');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'tma';
   tabella_01.open;
 
-  tabella_01_ds.Dataset := tabella_01;
+  tabella_01_ds.DataSet := tabella_01;
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT * FROM MG_DEPOSITI');
-  tabella_esa_01.Sql.Add('ORDER BY cod_dep');
-  tabella_esa_01.Open;
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT * FROM MG_DEPOSITI');
+  tabella_esa_01.sql.add('ORDER BY cod_dep');
+  tabella_esa_01.open;
 
   while not tabella_esa_01.eof do
   begin
@@ -3047,9 +3001,9 @@ begin
 
     tabella_01.append;
 
-    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.FieldByName('cod_dep').AsString);
-    tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.FieldByName('des_dep').AsString);
-    if tabella_esa_01.FieldByName('flg_prop_merce').AsString = '1' then
+    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.fieldbyname('cod_dep').asstring);
+    tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.fieldbyname('des_dep').asstring);
+    if tabella_esa_01.fieldbyname('flg_prop_merce').asstring = '1' then
     begin
       tabella_01.fieldbyname('proprieta').asstring := 'si';
     end
@@ -3060,20 +3014,20 @@ begin
 
     tabella_01.fieldbyname('descrizione1').asstring := '';
     tabella_01.fieldbyname('descrizione2').asstring := '';
-    tabella_01.fieldbyname('via').asstring := tabella_esa_01.FieldByName('des_indir').asstring;
-    tabella_01.fieldbyname('cap').asstring := tabella_esa_01.FieldByName('cod_cap').asstring;
-    tabella_01.fieldbyname('citta').asstring := tabella_esa_01.FieldByName('des_loc').asstring;
-    tabella_01.fieldbyname('provincia').asstring := tabella_esa_01.FieldByName('sig_prov').asstring;
+    tabella_01.fieldbyname('via').asstring := tabella_esa_01.fieldbyname('des_indir').asstring;
+    tabella_01.fieldbyname('cap').asstring := tabella_esa_01.fieldbyname('cod_cap').asstring;
+    tabella_01.fieldbyname('citta').asstring := tabella_esa_01.fieldbyname('des_loc').asstring;
+    tabella_01.fieldbyname('provincia').asstring := tabella_esa_01.fieldbyname('sig_prov').asstring;
 
     tabella_01.fieldbyname('tna_codice').asstring := tabella_esa_01.fieldbyname('cod_naz').asstring;
 
     tabella_01.post;
 
-    tabella_esa_01.Next;
+    tabella_esa_01.next;
   end;
 
-  tabella_01.close;
-  tabella_esa_01.close;
+  tabella_01.Close;
+  tabella_esa_01.Close;
 end;
 
 procedure TCONVEREADY.converti_tba;
@@ -3109,9 +3063,9 @@ begin
 
     tabella_esa_01.Next;
     end;
-  *)
-  tabella_01.close;
-  tabella_esa_01.close;
+ *)
+  tabella_01.Close;
+  tabella_esa_01.Close;
 end;
 
 procedure TCONVEREADY.converti_tum;
@@ -3120,32 +3074,32 @@ begin
   application.processmessages;
 
   cancella_tabella('tum');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'tum';
   tabella_01.open;
 
-  tabella_01_ds.Dataset := tabella_01;
+  tabella_01_ds.DataSet := tabella_01;
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT * FROM CA_UM');
-  tabella_esa_01.Sql.Add('order by cod_um');
-  tabella_esa_01.Open;
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT * FROM CA_UM');
+  tabella_esa_01.sql.add('order by cod_um');
+  tabella_esa_01.open;
 
   while not tabella_esa_01.eof do
   begin
     application.processmessages;
 
     tabella_01.append;
-    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.FieldByName('cod_um').AsString);
-    tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.FieldByName('des_um').AsString);
-    tabella_01.fieldbyname('decimali').asInteger := tabella_esa_01.FieldByName('num_dec_qta').asinteger;
+    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.fieldbyname('cod_um').asstring);
+    tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.fieldbyname('des_um').asstring);
+    tabella_01.fieldbyname('decimali').asInteger := tabella_esa_01.fieldbyname('num_dec_qta').asInteger;
     tabella_01.post;
 
-    tabella_esa_01.Next;
+    tabella_esa_01.next;
   end;
 
-  tabella_01.close;
-  tabella_esa_01.close;
+  tabella_01.Close;
+  tabella_esa_01.Close;
 end;
 
 procedure TCONVEREADY.converti_tlv;
@@ -3154,17 +3108,17 @@ begin
   application.processmessages;
 
   cancella_tabella('tlv');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'tlv';
   tabella_01.open;
 
-  tabella_01_ds.Dataset := tabella_01;
+  tabella_01_ds.DataSet := tabella_01;
 
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT * FROM PZ_LISTINI');
-  tabella_esa_01.Sql.Add('order by cod_listino');
-  tabella_esa_01.Open;
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT * FROM PZ_LISTINI');
+  tabella_esa_01.sql.add('order by cod_listino');
+  tabella_esa_01.open;
 
   while not tabella_esa_01.eof do
   begin
@@ -3172,21 +3126,21 @@ begin
 
     tabella_01.append;
 
-    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.FieldByName('cod_listino').AsString);
-    tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.FieldByName('des_listino').AsString);
-    tabella_01.fieldbyname('tva_codice').asstring := trim(tabella_esa_01.FieldByName('cod_valuta').AsString);
-    if tabella_esa_01.FieldByName('flg_iva_compresa').AsString = '0' then
+    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.fieldbyname('cod_listino').asstring);
+    tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.fieldbyname('des_listino').asstring);
+    tabella_01.fieldbyname('tva_codice').asstring := trim(tabella_esa_01.fieldbyname('cod_valuta').asstring);
+    if tabella_esa_01.fieldbyname('flg_iva_compresa').asstring = '0' then
       tabella_01.fieldbyname('iva_inclusa').asstring := 'no'
     else
       tabella_01.fieldbyname('iva_inclusa').asstring := 'si';
 
     tabella_01.post;
 
-    tabella_esa_01.Next;
+    tabella_esa_01.next;
   end;
 
-  tabella_01.close;
-  tabella_esa_01.close;
+  tabella_01.Close;
+  tabella_esa_01.Close;
 end;
 
 procedure TCONVEREADY.converti_tco;
@@ -3195,18 +3149,18 @@ begin
   application.processmessages;
 
   cancella_tabella('tco');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'tco';
   tabella_01.open;
 
-  tabella_01_ds.Dataset := tabella_01;
+  tabella_01_ds.DataSet := tabella_01;
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT * FROM CA_CAUCON');
-  tabella_esa_01.Sql.Add('where');
-  tabella_esa_01.Sql.Add('cod_piacont_mod=' + quotedstr('STD'));
-  tabella_esa_01.Sql.Add('order by cod_caucon');
-  tabella_esa_01.Open;
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT * FROM CA_CAUCON');
+  tabella_esa_01.sql.add('where');
+  tabella_esa_01.sql.add('cod_piacont_mod=' + quotedstr('STD'));
+  tabella_esa_01.sql.add('order by cod_caucon');
+  tabella_esa_01.open;
 
   while not tabella_esa_01.eof do
   begin
@@ -3268,9 +3222,8 @@ begin
         begin
         tabella_01.fieldbyname('insoluto').asstring := 'no';
         end;
-      *)
-      if (tabella_01.fieldbyname('tipo_registro_iva').asstring = 'vendite') or
-        (tabella_01.fieldbyname('tipo_registro_iva').asstring = 'acquisti') then
+ *)
+      if (tabella_01.fieldbyname('tipo_registro_iva').asstring = 'vendite') or (tabella_01.fieldbyname('tipo_registro_iva').asstring = 'acquisti') then
       begin
         if (trim(tabella_esa_01.fieldbyname('ind_tipo_oper_iva').asstring) <> '1') then
         begin
@@ -3282,8 +3235,7 @@ begin
         end;
       end;
 
-      if (tabella_01.fieldbyname('tipo_registro_iva').asstring = 'vendite') or
-        (tabella_01.fieldbyname('tipo_registro_iva').asstring = 'acquisti') then
+      if (tabella_01.fieldbyname('tipo_registro_iva').asstring = 'vendite') or (tabella_01.fieldbyname('tipo_registro_iva').asstring = 'acquisti') then
       begin
         // tabella_01.fieldbyname('serie_numerazione').asstring :=
         // trim(tabella_esa_01.fieldbyname('nRegistroivaproposto').asString) +
@@ -3298,7 +3250,7 @@ begin
         begin
         tabella_01.fieldbyname('gen_codice_iva').asstring := tabella_esa_01.fieldbyname('sottoconto_Dare_1').asstring;
         end;
-      *)
+ *)
       if tabella_01.fieldbyname('tipo_registro_iva').asstring = 'acquisti' then
       begin
         tabella_01.fieldbyname('cfg_tipo_01').asstring := 'F';
@@ -3342,8 +3294,8 @@ begin
     tabella_esa_01.next;
   end;
 
-  tabella_01.close;
-  tabella_esa_01.close;
+  tabella_01.Close;
+  tabella_esa_01.Close;
 end;
 
 procedure TCONVEREADY.converti_tsp;
@@ -3394,7 +3346,7 @@ begin
 
     tabella_01.close;
     tabella_esa_01.close;
-  *)
+ *)
 end;
 
 procedure TCONVEREADY.converti_tzo;
@@ -3405,29 +3357,29 @@ begin
   application.processmessages;
 
   cancella_tabella('tzo');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'tzo';
   tabella_01.open;
 
-  tabella_01_ds.Dataset := tabella_01;
+  tabella_01_ds.DataSet := tabella_01;
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT * FROM CO_ZONE');
-  tabella_esa_01.Sql.Add('ORDER BY cod_zona');
-  tabella_esa_01.Open;
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT * FROM CO_ZONE');
+  tabella_esa_01.sql.add('ORDER BY cod_zona');
+  tabella_esa_01.open;
 
   while not tabella_esa_01.eof do
   begin
     tabella_01.append;
-    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.FieldByName('cod_zona').AsString);
-    tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.FieldByName('des_zona').AsString);
+    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.fieldbyname('cod_zona').asstring);
+    tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.fieldbyname('des_zona').asstring);
     tabella_01.post;
 
-    tabella_esa_01.Next;
+    tabella_esa_01.next;
   end;
 
-  tabella_01.close;
-  tabella_esa_01.close;
+  tabella_01.Close;
+  tabella_esa_01.Close;
 end;
 
 procedure TCONVEREADY.converti_tdo;
@@ -3438,22 +3390,22 @@ begin
   application.processmessages;
 
   cancella_tabella('tdo');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'tdo';
   tabella_01.open;
 
-  tco.Open;
+  tco.open;
 
-  //--------------------------------------------------------------------
+  // --------------------------------------------------------------------
   // ordini clienti
-  //--------------------------------------------------------------------
+  // --------------------------------------------------------------------
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT * from MG_TIPODOC');
-  tabella_esa_01.Sql.Add('where');
-  tabella_esa_01.Sql.Add('cod_gruppo_tipodoc in (''BLV'', ''FAV'' ) ');
-  tabella_esa_01.Sql.Add('order by 1');
-  tabella_esa_01.Open;
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT * from MG_TIPODOC');
+  tabella_esa_01.sql.add('where');
+  tabella_esa_01.sql.add('cod_gruppo_tipodoc in (''BLV'', ''FAV'' ) ');
+  tabella_esa_01.sql.add('order by 1');
+  tabella_esa_01.open;
 
   while not tabella_esa_01.eof do
   begin
@@ -3492,11 +3444,11 @@ begin
       end;
     end;
 
-    tabella_esa_01.Next;
+    tabella_esa_01.next;
   end;
 
   tabella_esa_01.Close;
-  tabella_01.close;
+  tabella_01.Close;
 
 end;
 
@@ -3508,7 +3460,7 @@ begin
   application.processmessages;
 
   cancella_tabella('tcc');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'tcc';
   tabella_01.open;
 
@@ -3516,7 +3468,7 @@ begin
   tabella_01.fieldvalues['codice'] := '0';
   tabella_01.fieldvalues['descrizione'] := '.';
   tabella_01.post;
-  tabella_01.close;
+  tabella_01.Close;
 end;
 
 procedure TCONVEREADY.converti_tca;
@@ -3528,7 +3480,7 @@ begin
   application.processmessages;
 
   cancella_tabella('tca');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'tca';
   tabella_01.open;
 
@@ -3537,7 +3489,7 @@ begin
   tabella_01.fieldvalues['descrizione'] := '.';
   tabella_01.post;
 
-  tabella_01.close;
+  tabella_01.Close;
 end;
 
 procedure TCONVEREADY.converti_tcf;
@@ -3548,7 +3500,7 @@ begin
   application.processmessages;
 
   cancella_tabella('tcf');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'tcf';
   tabella_01.open;
 
@@ -3556,7 +3508,7 @@ begin
   tabella_01.fieldvalues['codice'] := '0';
   tabella_01.fieldvalues['descrizione'] := '.';
   tabella_01.post;
-  tabella_01.close;
+  tabella_01.Close;
 end;
 
 procedure TCONVEREADY.converti_tpo;
@@ -3567,32 +3519,32 @@ begin
   application.processmessages;
 
   cancella_tabella('tpo');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'tpo';
   tabella_01.open;
 
-  tabella_01_ds.Dataset := tabella_01;
+  tabella_01_ds.DataSet := tabella_01;
 
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT * FROM CA_PORTO');
-  tabella_esa_01.Sql.Add('order by cod_porto');
-  tabella_esa_01.Open;
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT * FROM CA_PORTO');
+  tabella_esa_01.sql.add('order by cod_porto');
+  tabella_esa_01.open;
 
   while not tabella_esa_01.eof do
   begin
     application.processmessages;
 
     tabella_01.append;
-    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.FieldByName('cod_porto').AsString);
-    tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.FieldByName('des_porto').AsString);
+    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.fieldbyname('cod_porto').asstring);
+    tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.fieldbyname('des_porto').asstring);
     tabella_01.post;
 
-    tabella_esa_01.Next;
+    tabella_esa_01.next;
   end;
 
-  tabella_01.close;
-  tabella_esa_01.close;
+  tabella_01.Close;
+  tabella_esa_01.Close;
 
 end;
 
@@ -3604,32 +3556,32 @@ begin
   application.processmessages;
 
   cancella_tabella('tab');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'tab';
   tabella_01.open;
 
-  tabella_01_ds.Dataset := tabella_01;
+  tabella_01_ds.DataSet := tabella_01;
 
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT * FROM CA_ASPBENI');
-  tabella_esa_01.Sql.Add('order by cod_asp_beni');
-  tabella_esa_01.Open;
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT * FROM CA_ASPBENI');
+  tabella_esa_01.sql.add('order by cod_asp_beni');
+  tabella_esa_01.open;
 
   while not tabella_esa_01.eof do
   begin
     application.processmessages;
 
     tabella_01.append;
-    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.FieldByName('cod_asp_beni').AsString);
-    tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.FieldByName('des_asp_beni').AsString);
+    tabella_01.fieldbyname('codice').asstring := trim(tabella_esa_01.fieldbyname('cod_asp_beni').asstring);
+    tabella_01.fieldbyname('descrizione').asstring := trim(tabella_esa_01.fieldbyname('des_asp_beni').asstring);
     tabella_01.post;
 
-    tabella_esa_01.Next;
+    tabella_esa_01.next;
   end;
 
-  tabella_01.close;
-  tabella_esa_01.close;
+  tabella_01.Close;
+  tabella_esa_01.Close;
 end;
 
 procedure TCONVEREADY.converti_tsa;
@@ -3668,9 +3620,9 @@ begin
 
     tabella_esa_01.Next;
     end;
-  *)
-  tabella_01.close;
-  tabella_esa_01.close;
+ *)
+  tabella_01.Close;
+  tabella_esa_01.Close;
 end;
 
 // ******************************************************************************
@@ -3686,46 +3638,46 @@ begin
   cancella_tabella('mag');
 
   cancella_tabella('mmt');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'mmt';
   tabella_01.open;
 
   cancella_tabella('mmr');
-  tabella_02.close;
+  tabella_02.Close;
   tabella_02.tablename := 'mmr';
   tabella_02.open;
 
-  tabella_01_ds.Dataset := tabella_esa_01;
+  tabella_01_ds.DataSet := tabella_esa_01;
   try
     tabella_esa_01.Close;
-    tabella_esa_01.Sql.Clear;
-    tabella_esa_01.Sql.Add('SELECT ');
-    tabella_esa_01.Sql.Add('T.prg_movimento,');
-    tabella_esa_01.Sql.Add('T.num_esercizio,');
-    tabella_esa_01.Sql.Add('T.dat_movimento,');
-    tabella_esa_01.Sql.Add('T.dat_doc,');
-    tabella_esa_01.Sql.Add('T.des_num_doc,');
-    tabella_esa_01.Sql.Add('T.sig_serie_doc,');
-    tabella_esa_01.Sql.Add('T.sig_serie_prot,');
-    tabella_esa_01.Sql.Add('T.ind_clifor_c,');
-    tabella_esa_01.Sql.Add('T.cod_clifor_c,');
-    tabella_esa_01.Sql.Add('T.cod_dep_num,');
-    tabella_esa_01.Sql.Add('T.cod_caumag,');
-    tabella_esa_01.Sql.Add('T.cod_dep_mov as cod_dep_mov_t,');
-    tabella_esa_01.Sql.Add('T.cmb_valuta,');
-    tabella_esa_01.Sql.Add('T.cod_valuta,');
-    tabella_esa_01.Sql.Add('R.*');
-    tabella_esa_01.Sql.Add('FROM MG_MOVMAGT T');
-    tabella_esa_01.Sql.Add('inner join MG_MOVMAGR R on R.prg_movimento=T.prg_movimento');
-    tabella_esa_01.Sql.Add('WHERE');
-    tabella_esa_01.Sql.Add('T.cod_gruppo_tipodoc=''MMM'' ');
-    tabella_esa_01.Sql.Add('order by R.prg_movimento,R.prg_movimento_riga');
+    tabella_esa_01.sql.clear;
+    tabella_esa_01.sql.add('SELECT ');
+    tabella_esa_01.sql.add('T.prg_movimento,');
+    tabella_esa_01.sql.add('T.num_esercizio,');
+    tabella_esa_01.sql.add('T.dat_movimento,');
+    tabella_esa_01.sql.add('T.dat_doc,');
+    tabella_esa_01.sql.add('T.des_num_doc,');
+    tabella_esa_01.sql.add('T.sig_serie_doc,');
+    tabella_esa_01.sql.add('T.sig_serie_prot,');
+    tabella_esa_01.sql.add('T.ind_clifor_c,');
+    tabella_esa_01.sql.add('T.cod_clifor_c,');
+    tabella_esa_01.sql.add('T.cod_dep_num,');
+    tabella_esa_01.sql.add('T.cod_caumag,');
+    tabella_esa_01.sql.add('T.cod_dep_mov as cod_dep_mov_t,');
+    tabella_esa_01.sql.add('T.cmb_valuta,');
+    tabella_esa_01.sql.add('T.cod_valuta,');
+    tabella_esa_01.sql.add('R.*');
+    tabella_esa_01.sql.add('FROM MG_MOVMAGT T');
+    tabella_esa_01.sql.add('inner join MG_MOVMAGR R on R.prg_movimento=T.prg_movimento');
+    tabella_esa_01.sql.add('WHERE');
+    tabella_esa_01.sql.add('T.cod_gruppo_tipodoc=''MMM'' ');
+    tabella_esa_01.sql.add('order by R.prg_movimento,R.prg_movimento_riga');
     tabella_esa_01.open;
   except
 
     messaggio(000, 'manca la tabella del magazzino (MG_MOVMAGT)');
 
-    close;
+    Close;
     abort;
   end;
 
@@ -3746,9 +3698,7 @@ begin
 
     codice_articolo := trim(tabella_esa_01.fieldbyname('cod_art').asstring);
 
-    if (test_data <> tabella_esa_01.fieldbyname('dat_movimento').asdatetime) or
-      (test_numero_stringa <> tabella_esa_01.fieldbyname('des_num_doc').asstring) or
-      (test_cod_causale <> trim(tabella_esa_01.fieldbyname('cod_caumag').asstring)) then
+    if (test_data <> tabella_esa_01.fieldbyname('dat_movimento').asdatetime) or (test_numero_stringa <> tabella_esa_01.fieldbyname('des_num_doc').asstring) or (test_cod_causale <> trim(tabella_esa_01.fieldbyname('cod_caumag').asstring)) then
     begin
       progressivo := progressivo + 1;
       crea_mmt(progressivo);
@@ -3766,9 +3716,9 @@ begin
     tabella_esa_01.next;
   end;
 
-  tabella_01.close;
-  tabella_02.close;
-  tabella_esa_01.close;
+  tabella_01.Close;
+  tabella_02.Close;
+  tabella_esa_01.Close;
 
   // arc.attivazione_trigger(arc.arcdit, false, true);
 end;
@@ -3777,14 +3727,14 @@ procedure TCONVEREADY.crea_mmt(progressivo: integer);
 begin
 
   tabella_01.append;
-  tabella_01.fieldbyname('progressivo').asinteger := progressivo;
+  tabella_01.fieldbyname('progressivo').asInteger := progressivo;
   tabella_01.fieldbyname('data_registrazione').asdatetime := tabella_esa_01.fieldbyname('dat_movimento').asdatetime;
   tabella_01.fieldbyname('tmo_codice').asstring := trim(tabella_esa_01.fieldbyname('cod_caumag').asstring);
   tabella_01.fieldbyname('tma_codice').asstring := tabella_esa_01.fieldbyname('cod_dep_mov_t').asstring;
   try
-    tabella_01.fieldbyname('numero_documento').asinteger := tabella_esa_01.fieldbyname('des_num_doc').asinteger;
+    tabella_01.fieldbyname('numero_documento').asInteger := tabella_esa_01.fieldbyname('des_num_doc').asInteger;
   except
-    tabella_01.fieldbyname('numero_documento').asinteger := 0;
+    tabella_01.fieldbyname('numero_documento').asInteger := 0;
   end;
 
   try
@@ -3830,7 +3780,7 @@ begin
 
   tabella_01.fieldbyname('tva_codice').asstring := tabella_esa_01.fieldbyname('cod_valuta').asstring;
   tabella_01.fieldbyname('ese_codice').asstring := tabella_esa_01.fieldbyname('num_esercizio').asstring;
-  tabella_01.fieldbyname('cambio').asfloat := tabella_esa_01.fieldbyname('cmb_valuta').asfloat;
+  tabella_01.fieldbyname('cambio').asFloat := tabella_esa_01.fieldbyname('cmb_valuta').asFloat;
   tabella_01.post;
 
   riga := 0;
@@ -3854,9 +3804,9 @@ begin
   begin
     tabella_02.append;
 
-    tabella_02.fieldbyname('progressivo').asfloat := tabella_01.fieldbyname('progressivo').asfloat;
+    tabella_02.fieldbyname('progressivo').asFloat := tabella_01.fieldbyname('progressivo').asFloat;
     riga := riga + 1;
-    tabella_02.fieldbyname('riga').asinteger := riga;
+    tabella_02.fieldbyname('riga').asInteger := riga;
 
     if arc.dit.fieldbyname('codice_articolo_numerico').asstring = 'si' then
     begin
@@ -3867,32 +3817,32 @@ begin
       tabella_02.fieldbyname('art_codice').asstring := codice_articolo;
     end;
 
-    tabella_02.fieldbyname('quantita').asfloat := tabella_esa_01.fieldbyname('qta_merce').asfloat;
-    tabella_02.fieldbyname('prezzo').asfloat := tabella_esa_01.fieldbyname('prz_merce').asfloat;
-    tabella_02.fieldbyname('importo').asfloat := tabella_esa_01.fieldbyname('val_merce_doc').asfloat;
-    tabella_02.fieldbyname('importo_euro').asfloat := tabella_esa_01.fieldbyname('val_merce').asfloat;
+    tabella_02.fieldbyname('quantita').asFloat := tabella_esa_01.fieldbyname('qta_merce').asFloat;
+    tabella_02.fieldbyname('prezzo').asFloat := tabella_esa_01.fieldbyname('prz_merce').asFloat;
+    tabella_02.fieldbyname('importo').asFloat := tabella_esa_01.fieldbyname('val_merce_doc').asFloat;
+    tabella_02.fieldbyname('importo_euro').asFloat := tabella_esa_01.fieldbyname('val_merce').asFloat;
     tabella_02.fieldbyname('tma_codice').asstring := tabella_esa_01.fieldbyname('cod_dep_mov').asstring;
 
-    if (tabella_02.fieldbyname('prezzo').asfloat = 0) and (tabella_02.fieldbyname('importo').asfloat > 0) then
+    if (tabella_02.fieldbyname('prezzo').asFloat = 0) and (tabella_02.fieldbyname('importo').asFloat > 0) then
     begin
-      tabella_02.fieldbyname('prezzo').asfloat := tabella_esa_01.fieldbyname('val_merce_doc').asfloat / tabella_esa_01.fieldbyname('qta_merce').asfloat;
+      tabella_02.fieldbyname('prezzo').asFloat := tabella_esa_01.fieldbyname('val_merce_doc').asFloat / tabella_esa_01.fieldbyname('qta_merce').asFloat;
     end;
 
     read_tabella(arc.arcdit, 'tmo', 'codice', tabella_01.fieldbyname('tmo_codice').asstring);
     if archivio.fieldbyname('esistenza').asstring = 'incrementa' then
     begin
-      tabella_02.fieldbyname('quantita_entrate').AsFloat := tabella_esa_01.fieldbyname('qta_merce').asfloat;
-      tabella_02.fieldbyname('quantita_uscite').AsFloat := 0;
+      tabella_02.fieldbyname('quantita_entrate').asFloat := tabella_esa_01.fieldbyname('qta_merce').asFloat;
+      tabella_02.fieldbyname('quantita_uscite').asFloat := 0;
     end
     else if archivio.fieldbyname('esistenza').asstring = 'decrementa' then
     begin
-      tabella_02.fieldbyname('quantita_entrate').AsFloat := 0;
-      tabella_02.fieldbyname('quantita_uscite').AsFloat := tabella_esa_01.fieldbyname('qta_merce').asfloat;
+      tabella_02.fieldbyname('quantita_entrate').asFloat := 0;
+      tabella_02.fieldbyname('quantita_uscite').asFloat := tabella_esa_01.fieldbyname('qta_merce').asFloat;
     end
     else if archivio.fieldbyname('esistenza').asstring = 'ignora' then
     begin
-      tabella_02.fieldbyname('quantita_entrate').AsFloat := 0;
-      tabella_02.fieldbyname('quantita_uscite').AsFloat := 0;
+      tabella_02.fieldbyname('quantita_entrate').asFloat := 0;
+      tabella_02.fieldbyname('quantita_uscite').asFloat := 0;
     end;
 
     (* §
@@ -3915,7 +3865,7 @@ begin
       tabella_02.fieldbyname('tsm_codice').asstring := setta_lunghezza(tsm_codice, 4, 0);
       end;
       end;
-    *)
+ *)
 
     tabella_02.post;
 
@@ -3927,112 +3877,111 @@ procedure TCONVEREADY.converti_ordini_clienti;
 var
   i: integer;
   test_serie, test_numero_doc: string;
-
+  test_progressivo: integer;
 begin
   v_tabella_01.caption := 'ordini clienti';
   application.processmessages;
 
-  (*
-    query.SQL.clear;
-    query.sql.add('select * from esa_tag');
-    query.sql.add('where');
-    query.sql.add('esa_codice=:esa_codice');
-    try
-    query.Open;
-    except
+  query.sql.clear;
+  query.sql.add('select * from esa_tag');
+  query.sql.add('where');
+  query.sql.add('esa_codice=:esa_codice');
+  try
+    query.open;
+  except
     converti_tag;
-    end;
+  end;
 
-    cancella_tabella('ovt');
-    tabella_01.close;
-    tabella_01.tablename := 'ovt';
-    tabella_01.open;
+  cancella_tabella('ovt');
+  tabella_01.Close;
+  tabella_01.tablename := 'ovt';
+  tabella_01.open;
 
-    cancella_tabella('ovr');
-    tabella_02.close;
-    tabella_02.tablename := 'ovr';
-    tabella_02.open;
+  cancella_tabella('ovr');
+  tabella_02.Close;
+  tabella_02.tablename := 'ovr';
+  tabella_02.open;
 
-    tabella_01_ds.Dataset := tabella_01;
-    tabella_esa_01.Close;
-    tabella_esa_01.Sql.Clear;
-    tabella_esa_01.Sql.Add('SELECT * FROM TESTATEORDINI');
-    tabella_esa_01.Sql.Add('WHERE');
-    tabella_esa_01.Sql.Add('TIPO_RECORD_1=:TP AND TIPO_documento_1=:TD AND Stato_Ordine<>:SO');
-    tabella_esa_01.Sql.Add('ORDER BY Serie_documento,Numero_documento');
-    tabella_esa_01.Parameters.ParamByName('TP').Value := 'T';
-    tabella_esa_01.Parameters.ParamByName('TD').Value := 'I';
-    tabella_esa_01.Parameters.ParamByName('SO').Value := 'E';
+  tabella_01_ds.DataSet := tabella_01;
+  tabella_esa_01.Close;
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT * FROM OR_ORDINIT');
+  tabella_esa_01.sql.add('WHERE');
+  tabella_esa_01.sql.add('cod_gruppo_tipodoc=:cod_gruppo_tipodoc');
+  tabella_esa_01.sql.add('ORDER BY prg_ordine');
+  tabella_esa_01.Parameters.ParamByName('cod_gruppo_tipodoc').Value := 'IMP';
+  tabella_esa_01.open;
 
-    tabella_esa_01.Open;
+  tabella_esa_02.Close;
+  tabella_esa_02.sql.clear;
+  tabella_esa_02.sql.add('SELECT * FROM OR_ORDINIR');
+  tabella_esa_02.sql.add('WHERE');
+  tabella_esa_02.sql.add('prg_ordine=:prg_ordine');
+  tabella_esa_02.sql.add('ORDER BY prg_ordine_riga');
 
-    tabella_esa_02.Close;
-    tabella_esa_02.Sql.Clear;
-    tabella_esa_02.Sql.Add('SELECT * FROM RIGHEORDINI');
-    tabella_esa_02.Sql.Add('WHERE');
-    tabella_esa_02.Sql.Add('TIPO_RECORD=:TP AND TIPO_DOCUMENTO=:TD AND Stato_riga_ordine<>:SO');
-    tabella_esa_02.Sql.Add('ORDER BY Serie_documento_1,Numero_documento_1,Numero_riga');
+  test_data := 0;
+  test_alfa := '';
+  test_numero := 0;
+  test_progressivo := 0;
 
-    tabella_esa_02.Parameters.ParamByName('TP').Value := 'R';
-    tabella_esa_02.Parameters.ParamByName('TD').Value := 'I';
-    tabella_esa_02.Parameters.ParamByName('SO').Value := 'E';
-    tabella_esa_02.Open;
+  test_serie := '';
+  test_numero_doc := '';
 
-    test_data := 0;
-    test_alfa := '';
-    test_numero := 0;
+  query.sql.clear;
+  query.sql.add('select codice from tsm where sconto_maggiorazione = ''sconto''');
+  query.sql.add('and percentuale_01 = :percentuale_01 and percentuale_02 = :percentuale_02 limit 1');
 
-    test_serie := '';
-    test_numero_doc := '';
-
-    query.sql.clear;
-    query.sql.add('select codice from tsm where sconto_maggiorazione = ''sconto''');
-    query.sql.add('and percentuale_01 = :percentuale_01 and percentuale_02 = :percentuale_02 limit 1');
-
-    while not tabella_esa_01.eof do
-    begin
+  while not tabella_esa_01.eof do
+  begin
+    tabella_01_ds.DataSet := tabella_esa_01;
     crea_ovt;
 
-    test_serie := tabella_esa_01.FieldByName('Serie_documento').AsString;
-    test_numero_doc := tabella_esa_01.FieldByName('Numero_documento').AsString;
+    test_serie := tabella_esa_01.fieldbyname('sig_serie_doc').asstring;
+    test_numero_doc := tabella_esa_01.fieldbyname('num_doc').asstring;
 
-    if tabella_esa_02.Locate('Serie_documento_1;Numero_documento_1', VarArrayof([test_serie, test_numero_doc]), []) then
+    test_progressivo := tabella_esa_01.fieldbyname('prg_ordine').asInteger;
+
+    tabella_esa_02.Close;
+    tabella_esa_02.Parameters.ParamByName('prg_ordine').Value := test_progressivo;
+    tabella_esa_02.open;
+    if not tabella_esa_02.eof then
     begin
-    crea_ovr(test_serie, test_numero_doc);
+      crea_ovr(test_progressivo);
     end;
 
     tabella_esa_01.next;
-    end;
-  *)
-  tabella_01.close;
-  tabella_02.close;
-  tabella_03.close;
-  tabella_esa_01.close;
-  tabella_esa_02.close;
+  end;
+
+  tabella_01.Close;
+  tabella_02.Close;
+  tabella_03.Close;
+  tabella_esa_01.Close;
+  tabella_esa_02.Close;
 
 end;
 
 procedure TCONVEREADY.crea_ovt;
 begin
-
   tabella_01.append;
-
+  tabella_01.fieldbyname('progressivo').asInteger := tabella_esa_01.fieldbyname('prg_ordine').asInteger;
   tabella_01.fieldbyname('tipo_documento').asstring := 'ordine';
   tabella_01.fieldbyname('tdo_codice').asstring := 'ORDV';
-  tabella_01.fieldbyname('data_documento').asdatetime := converti_data(tabella_esa_01.fieldbyname('data_ordine').asstring);
-  tabella_01.fieldbyname('serie_documento').asstring := tabella_esa_01.fieldbyname('serie_documento').asstring;
-  tabella_01.fieldbyname('numero_documento').asinteger := StrToInt(trim(tabella_esa_01.fieldbyname('numero_documento').asstring));
+  tabella_01.fieldbyname('data_documento').asdatetime := tabella_esa_01.fieldbyname('dat_doc').asdatetime;
+  tabella_01.fieldbyname('serie_documento').asstring := tabella_esa_01.fieldbyname('sig_serie_doc').asstring;
+  tabella_01.fieldbyname('numero_documento').asInteger := tabella_esa_01.fieldbyname('num_doc').asInteger;
 
-  assegna_codice_cli(tabella_esa_01.fieldbyname('Cod_clifor_Contropar').asstring, cli_for);
+  assegna_codice_cli(tabella_esa_01.fieldbyname('cod_clifor_c').asstring, cli_for);
 
   tabella_01.fieldbyname('cli_codice').asstring := cli_for;
-  tabella_01.fieldbyname('tma_codice').asstring := '000'; // tabella_esa_01.fieldbyname('ortesmag').asstring;
-  if trim(tabella_esa_01.fieldbyname('Codice_Agente').asstring) = '' then
+  tabella_01.fieldbyname('tma_codice').asstring := tabella_esa_01.fieldbyname('cod_dep_mov').asstring;
+  if trim(tabella_esa_01.fieldbyname('cod_agente').asstring) = '' then
+  begin
     tabella_01.fieldbyname('tag_codice').asstring := '0000'
+  end
   else
   begin
-    query.close;
-    query.parambyname('esa_codice').asstring := trim(tabella_esa_01.fieldbyname('Codice_Agente').asstring);
+    query.Close;
+    query.ParamByName('esa_codice').asstring := trim(tabella_esa_01.fieldbyname('cod_agente').asstring);
     query.open;
     if not query.eof then
     begin
@@ -4044,16 +3993,15 @@ begin
     end;
   end;
 
-  tabella_01.fieldbyname('tpa_codice').asstring := tabella_esa_01.fieldbyname('Codice_Pagamento').asstring;
-  tabella_01.fieldbyname('codice_abi').asstring := tabella_esa_01.fieldbyname('Codice_Banca').asstring;
-  tabella_01.fieldbyname('codice_cab').asstring := tabella_esa_01.fieldbyname('Codice_Agenzia').asstring;
+  tabella_01.fieldbyname('tpa_codice').asstring := tabella_esa_01.fieldbyname('cod_pag').asstring;
+  tabella_01.fieldbyname('codice_abi').asstring := tabella_esa_01.fieldbyname('cod_banca').asstring;
+  tabella_01.fieldbyname('codice_cab').asstring := tabella_esa_01.fieldbyname('sig_ccbanc').asstring;
 
-  tabella_01.fieldbyname('tlv_codice').asstring := tabella_esa_01.fieldbyname('num_listino').asstring;
-  tabella_01.fieldbyname('tva_codice').asstring := tabella_esa_01.fieldbyname('codice_valuta').asstring;
-  tabella_01.fieldbyname('cambio').asfloat := tabella_esa_01.fieldbyname('cambio').asfloat;
-  // tabella_01.fieldbyname('tpo_codice').asstring := tabella_esa_01.fieldbyname('orcodpor').asstring;
+  tabella_01.fieldbyname('tlv_codice').asstring := tabella_esa_01.fieldbyname('cod_listino').asstring;
+  tabella_01.fieldbyname('tva_codice').asstring := tabella_esa_01.fieldbyname('cod_valuta').asstring;
+  tabella_01.fieldbyname('cambio').asFloat := tabella_esa_01.fieldbyname('cmb_valuta').asFloat;
 
-  tabella_01.fieldbyname('nostro_riferimento').asstring := tabella_esa_01.fieldbyname('Riferimento').asstring;
+  tabella_01.fieldbyname('nostro_riferimento').asstring := tabella_esa_01.fieldbyname('des_riferimento').asstring;
 
   (*
     if tabella_esa_01.fieldbyname('ORCODDES').asinteger <> 0 then
@@ -4072,45 +4020,33 @@ begin
     tabella_01.fieldbyname('tna_codice').asstring := archivio.fieldbyname('tna_codice').asstring;
     end;
     end;
-  *)
+ *)
   read_tabella(arc.arcdit, 'tlv', 'codice', tabella_01.fieldbyname('tlv_codice').asstring);
   tabella_01.fieldbyname('listino_con_iva').asstring := archivio.fieldbyname('iva_inclusa').asstring;
 
   read_tabella(arc.arcdit, 'cli', 'codice', tabella_01.fieldbyname('cli_codice').asstring);
-  tabella_01.fieldbyname('tsp_codice').asstring := '01'; // archivio.fieldbyname('tsp_codice').asstring;
+  tabella_01.fieldbyname('tsp_codice').asstring := archivio.fieldbyname('tsp_codice').asstring;
   tabella_01.fieldbyname('tst_codice').asstring := archivio.fieldbyname('tst_codice').asstring;
   tabella_01.fieldbyname('addebito_spese_fattura').asstring := archivio.fieldbyname('addebito_spese_fattura').asstring;
 
-  tabella_01.fieldbyname('tpo_codice').asstring := '01';
+  tabella_01.fieldbyname('tpo_codice').asstring := tabella_esa_01.fieldbyname('cod_porto').asstring;;
   read_tabella(arc.arcdit, 'tpo', 'codice', tabella_01.fieldbyname('tpo_codice').asstring);
   tabella_01.fieldbyname('addebito_spese_trasporto').asstring := archivio.fieldbyname('addebito').asstring;
-
-  if tabella_esa_01.FieldByName('stato_ordine').AsString = 'E' then
-    tabella_01.fieldbyname('situazione').asstring := 'evaso'
-  else if tabella_esa_01.FieldByName('stato_ordine').AsString = 'P' then
-    tabella_01.fieldbyname('situazione').asstring := 'evaso parziale'
-  else
-    tabella_01.fieldbyname('situazione').asstring := 'inserito';
-
   tabella_01.post;
 
   riga := 0;
 end;
 
-procedure TCONVEREADY.crea_ovr(serie_documento, numero_documento: string);
+procedure TCONVEREADY.crea_ovr(progressivo: integer);
 var
   codice_articolo: string;
 begin
 
-  while
-    not(tabella_esa_02.eof) and
-    (tabella_esa_02.FieldByName('Serie_documento_1').AsString = serie_documento) and
-    (tabella_esa_02.FieldByName('Numero_documento_1').AsString = numero_documento) do
+  while not tabella_esa_02.eof do
   begin
 
-    codice_Articolo := trim(tabella_esa_02.fieldbyname('Codice_Articolo').asstring);
-    if (codice_articolo <> '-M') and
-      (codice_articolo <> '-D') then
+    codice_articolo := trim(tabella_esa_02.fieldbyname('cod_art').asstring);
+    if (codice_articolo <> '') then
     begin
       esiste_articolo := true;
       if (not read_tabella(arc.arcdit, 'art', 'codice', codice_articolo)) then
@@ -4127,11 +4063,10 @@ begin
     begin
       tabella_02.append;
 
-      tabella_02.fieldbyname('progressivo').asfloat := tabella_01.fieldbyname('progressivo').asfloat;
-      tabella_02.fieldbyname('riga').asinteger := tabella_esa_02.fieldbyname('Numero_riga').asinteger;
+      tabella_02.fieldbyname('progressivo').asFloat := tabella_esa_02.fieldbyname('prg_ordine').asFloat;
+      tabella_02.fieldbyname('riga').asInteger := tabella_esa_02.fieldbyname('prg_ordine_riga').asInteger;
 
-      if (codice_articolo = '-M') or
-        (codice_articolo = '-D') then
+      if (codice_articolo = '') then
       begin
         tabella_02.fieldbyname('art_codice').asstring := '';
       end
@@ -4148,40 +4083,33 @@ begin
         end;
       end;
 
-      tabella_02.fieldbyname('descrizione1').asstring := trim(tabella_esa_02.fieldbyname('Descrizione_Articolo').asstring);
-      tabella_02.fieldbyname('descrizione2').asstring := trim(tabella_esa_02.fieldbyname('Descrizione2Articolo').asstring);
-      // tabella_02.fieldbyname('note').asstring := tabella_esa_02.fieldbyname('OR__NOTE').asstring;
-      tabella_02.fieldbyname('gen_codice').asstring := tabella_esa_02.fieldbyname('Contropartita_Ricavo').asstring;
-      tabella_02.fieldbyname('tiv_codice').asstring := tabella_esa_02.fieldbyname('Codice_Iva').asstring;
+      tabella_02.fieldbyname('descrizione1').asstring := copy(trim(tabella_esa_02.fieldbyname('des_articolo_riga').asstring), 1, 40);
+      tabella_02.fieldbyname('descrizione2').asstring := copy(trim(tabella_esa_02.fieldbyname('des_articolo_riga').asstring), 41, 40);
 
-      tabella_02.fieldbyname('quantita').asfloat := arrotonda(tabella_esa_02.fieldbyname('qta_movimento').asfloat);
+      tabella_02.fieldbyname('gen_codice').asstring := tabella_esa_02.fieldbyname('cod_cpartita').asstring;
+      tabella_02.fieldbyname('tiv_codice').asstring := tabella_esa_02.fieldbyname('cod_iva').asstring;
 
-      tabella_02.fieldbyname('prezzo').asfloat := tabella_esa_02.fieldbyname('Prezzo_Unitario').asfloat;
-      (*
-        if not ((tabella_esa_02.fieldbyname('orscont1').asfloat = 0) and (tabella_esa_02.fieldbyname('orscont2').asfloat = 0)) then
-        begin
-        query.params[0].asfloat := tabella_esa_02.fieldbyname('orscont1').asfloat;
-        query.params[1].asfloat := tabella_esa_02.fieldbyname('orscont2').asfloat;
-        query.close;
-        query.open;
-        if not query.eof then
-        begin
-        tabella_02.fieldbyname('tsm_codice').asstring := query.fieldbyname('codice').asstring;
-        end
-        else
-        begin
-        messaggio(000, 'manca la tabella sconto ' + floattostr(tabella_esa_02.fieldbyname('orscont1').asfloat) + ' + ' +
-        floattostr(tabella_esa_02.fieldbyname('orscont2').asfloat));
-        end;
-        end;
-      *)
+      tabella_02.fieldbyname('quantita').asFloat := arrotonda(tabella_esa_02.fieldbyname('qta_merce').asFloat + tabella_esa_02.fieldbyname('qta_merce_delta').asFloat);
+      tabella_02.fieldbyname('quantita_evasa').asFloat := arrotonda(tabella_esa_02.fieldbyname('qta_merce_delta').asFloat);
+
+      tabella_02.fieldbyname('prezzo').asFloat := tabella_esa_02.fieldbyname('prz_merce').asFloat;
+      tabella_02.fieldbyname('tsm_codice').asFloat := tabella_esa_02.fieldbyname('prc_sconto1').asFloat;
+      tabella_02.fieldbyname('tsm_codice').asFloat := tabella_esa_02.fieldbyname('prc_sconto2').asFloat;
+
       calcola_importo;
-      tabella_02.fieldbyname('tma_codice').asstring := tabella_01.fieldbyname('tma_codice').asstring;
+      tabella_02.fieldbyname('tma_codice').asstring := tabella_esa_02.fieldbyname('cod_dep_mov').asstring;
+
+      if tabella_esa_02.fieldbyname('ind_stato_riga').asstring = 'E' then
+        tabella_02.fieldbyname('situazione').asstring := 'evaso'
+      else if tabella_esa_02.fieldbyname('ind_stato_riga').asstring = 'P' then
+        tabella_02.fieldbyname('situazione').asstring := 'evaso parziale'
+      else
+        tabella_02.fieldbyname('situazione').asstring := 'inserito';
 
       tabella_02.post;
     end;
 
-    tabella_esa_02.Next;
+    tabella_esa_02.next;
   end; // while
 
 end;
@@ -4192,65 +4120,65 @@ begin
   application.processmessages;
 
   cancella_tabella('fvr');
-  tabella_02.close;
+  tabella_02.Close;
   tabella_02.tablename := 'fvr';
   tabella_02.open;
 
   cancella_tabella('fvi');
-  tabella_03.close;
+  tabella_03.Close;
   tabella_03.tablename := 'fvi';
   tabella_03.open;
 
   cancella_tabella('fvt');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'fvt';
   tabella_01.open;
 
-  tabella_01_ds.Dataset := tabella_01;
+  tabella_01_ds.DataSet := tabella_01;
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT T.*, ');
-  tabella_esa_01.Sql.Add('case when T.cod_tipodoc=''022'' then ''FAIV''  ');
-  tabella_esa_01.Sql.Add('     when T.cod_tipodoc=''022ACC'' then ''FAAV''  ');
-  tabella_esa_01.Sql.Add('     when T.cod_tipodoc=''023'' then ''FADV''  ');
-  tabella_esa_01.Sql.Add('     when T.cod_tipodoc=''025'' then ''NC''  ');
-  tabella_esa_01.Sql.Add('     else ''FAIV'' ');
-  tabella_esa_01.Sql.Add('end tdo_codice  ');
-  tabella_esa_01.Sql.Add('FROM MG_MOVMAGT T');
-  tabella_esa_01.Sql.Add('WHERE');
-  tabella_esa_01.Sql.Add('T.cod_gruppo_tipodoc=''FAV'' ');
-  tabella_esa_01.Sql.Add('ORDER BY T.prg_movimento');
-  tabella_esa_01.Open;
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT T.*, ');
+  tabella_esa_01.sql.add('case when T.cod_tipodoc=''022'' then ''FAIV''  ');
+  tabella_esa_01.sql.add('     when T.cod_tipodoc=''022ACC'' then ''FAAV''  ');
+  tabella_esa_01.sql.add('     when T.cod_tipodoc=''023'' then ''FADV''  ');
+  tabella_esa_01.sql.add('     when T.cod_tipodoc=''025'' then ''NC''  ');
+  tabella_esa_01.sql.add('     else ''FAIV'' ');
+  tabella_esa_01.sql.add('end tdo_codice  ');
+  tabella_esa_01.sql.add('FROM MG_MOVMAGT T');
+  tabella_esa_01.sql.add('WHERE');
+  tabella_esa_01.sql.add('T.cod_gruppo_tipodoc=''FAV'' ');
+  tabella_esa_01.sql.add('ORDER BY T.prg_movimento');
+  tabella_esa_01.open;
 
   tabella_esa_02.Close;
-  tabella_esa_02.Sql.Clear;
-  tabella_esa_02.Sql.Add('SELECT * FROM MG_MOVMAGR');
-  tabella_esa_02.Sql.Add('WHERE');
-  tabella_esa_02.Sql.Add('prg_movimento=:prg_movimento');
-  tabella_esa_02.Sql.Add('ORDER BY num_riga');
+  tabella_esa_02.sql.clear;
+  tabella_esa_02.sql.add('SELECT * FROM MG_MOVMAGR');
+  tabella_esa_02.sql.add('WHERE');
+  tabella_esa_02.sql.add('prg_movimento=:prg_movimento');
+  tabella_esa_02.sql.add('ORDER BY num_riga');
 
   query.sql.clear;
   query.sql.add('select codice from tsm where sconto_maggiorazione = ''sconto''');
   query.sql.add('and percentuale_01 = :percentuale_01 and percentuale_02 = :percentuale_02 limit 1');
 
-  tabella_01_ds.dataset := tabella_esa_01;
+  tabella_01_ds.DataSet := tabella_esa_01;
   while not tabella_esa_01.eof do
   begin
     application.processmessages;
 
     crea_fvt;
     crea_fvi;
-    crea_fvr(tabella_esa_01.fieldbyname('prg_movimento').asinteger);
+    crea_fvr(tabella_esa_01.fieldbyname('prg_movimento').asInteger);
 
     tabella_esa_01.next;
   end;
 
-  tabella_01.close;
-  tabella_02.close;
-  tabella_03.close;
-  tabella_esa_01.close;
-  tabella_esa_02.close;
-  tabella_esa_03.close;
+  tabella_01.Close;
+  tabella_02.Close;
+  tabella_03.Close;
+  tabella_esa_01.Close;
+  tabella_esa_02.Close;
+  tabella_esa_03.Close;
 end;
 
 procedure TCONVEREADY.crea_fvt;
@@ -4258,11 +4186,11 @@ var
   tcc_codice: string;
 begin
   tabella_esa_03.Close;
-  tabella_esa_03.Sql.Clear;
-  tabella_esa_03.Sql.Add('SELECT * FROM VN_DOCUMENTO');
-  tabella_esa_03.Sql.Add('WHERE');
-  tabella_esa_03.Sql.Add('prg_movimento=:prg_movimento ');
-  tabella_esa_03.parameters.parambyname('prg_movimento').value := tabella_esa_01.fieldbyname('prg_movimento').asinteger;
+  tabella_esa_03.sql.clear;
+  tabella_esa_03.sql.add('SELECT * FROM VN_DOCUMENTO');
+  tabella_esa_03.sql.add('WHERE');
+  tabella_esa_03.sql.add('prg_movimento=:prg_movimento ');
+  tabella_esa_03.Parameters.ParamByName('prg_movimento').Value := tabella_esa_01.fieldbyname('prg_movimento').asInteger;
   tabella_esa_03.open;
 
   if (codice_nom_numerico = 'si') and (not v_codifica_clienti.checked) then
@@ -4279,7 +4207,7 @@ begin
   tcc_codice := archivio.fieldbyname('tcc_codice').asstring;
 
   tabella_01.append;
-  tabella_01.fieldbyname('progressivo').asinteger := tabella_esa_01.fieldbyname('prg_movimento').asinteger;
+  tabella_01.fieldbyname('progressivo').asInteger := tabella_esa_01.fieldbyname('prg_movimento').asInteger;
 
   tabella_01.fieldbyname('cli_codice').asstring := cli_for;
   tabella_01.fieldbyname('tlv_codice').asstring := archivio.fieldbyname('tlv_codice').asstring;
@@ -4314,7 +4242,7 @@ begin
   tabella_01.fieldbyname('gen_codice_spese_extra').asstring := archivio.fieldbyname('gen_codice').asstring;
 
   tabella_01.fieldbyname('data_documento').asdatetime := tabella_esa_01.fieldbyname('dat_doc').asdatetime;
-  tabella_01.fieldbyname('numero_documento').asinteger := tabella_esa_01.fieldbyname('des_num_doc').asinteger;
+  tabella_01.fieldbyname('numero_documento').asInteger := tabella_esa_01.fieldbyname('des_num_doc').asInteger;
   tabella_01.fieldbyname('ese_codice').asstring := tabella_esa_01.fieldbyname('num_esercizio').asstring;
 
   tabella_01.fieldbyname('tma_codice').asstring := tabella_esa_01.fieldbyname('cod_dep_mov').asstring;
@@ -4336,7 +4264,7 @@ begin
       begin
       tabella_01.fieldbyname('tag_codice').asstring := '0000';
       end;
-    *)
+ *)
   end;
 
   tabella_01.fieldbyname('tpa_codice').asstring := tabella_esa_03.fieldbyname('cod_pag').asstring;
@@ -4355,7 +4283,7 @@ begin
     tabella_01.fieldbyname('tlv_codice').asstring := tabella_esa_01.fieldbyname('cod_listino').asstring;
   end;
   tabella_01.fieldbyname('tva_codice').asstring := tabella_esa_01.fieldbyname('cod_valuta').asstring;
-  tabella_01.fieldbyname('cambio').asfloat := tabella_esa_01.fieldbyname('cmb_valuta').asfloat;
+  tabella_01.fieldbyname('cambio').asFloat := tabella_esa_01.fieldbyname('cmb_valuta').asFloat;
 
   tabella_01.fieldbyname('riferimento').asstring := tabella_esa_03.fieldbyname('des_riferimento').asstring;
   tabella_01.fieldbyname('note').asstring := tabella_esa_03.fieldbyname('des_annotazioni').asstring;
@@ -4363,9 +4291,9 @@ begin
   read_tabella(arc.arcdit, 'tlv', 'codice', tabella_01.fieldbyname('tlv_codice').asstring);
   tabella_01.fieldbyname('listino_con_iva').asstring := archivio.fieldbyname('iva_inclusa').asstring;
 
-  if tabella_esa_01.FieldByName('cdn_sede_div').AsString <> '' then
+  if tabella_esa_01.fieldbyname('cdn_sede_div').asstring <> '' then
   begin
-    tabella_01.fieldbyname('indirizzo').asstring := tabella_esa_01.FieldByName('cdn_sede_div').AsString;
+    tabella_01.fieldbyname('indirizzo').asstring := tabella_esa_01.fieldbyname('cdn_sede_div').asstring;
 
     read_tabella(arc.arcdit, 'ind', 'cli_codice;indirizzo', vararrayof([tabella_01.fieldbyname('cli_codice').asstring, tabella_01.fieldbyname('indirizzo').asstring]));
     tabella_01.fieldbyname('descrizione1').asstring := archivio.fieldbyname('descrizione1').asstring;
@@ -4375,28 +4303,28 @@ begin
     tabella_01.fieldbyname('citta').asstring := archivio.fieldbyname('citta').asstring;
   end;
 
-  tabella_01.FieldByName('importo_bollo').Asfloat := tabella_esa_03.FieldByName('val_bollo_ese').Asfloat + tabella_esa_03.FieldByName('val_bollo_art15').Asfloat;
+  tabella_01.fieldbyname('importo_bollo').asFloat := tabella_esa_03.fieldbyname('val_bollo_ese').asFloat + tabella_esa_03.fieldbyname('val_bollo_art15').asFloat;
 
-  if tabella_esa_03.FieldByName('val_spese_tra').Asfloat > 0 then
+  if tabella_esa_03.fieldbyname('val_spese_tra').asFloat > 0 then
   begin
-    tabella_01.FieldByName('spese_manuali').asstring := 'si';
-    tabella_01.FieldByName('spese_manuali_trasporto').asstring := 'si';
-    tabella_01.FieldByName('importo_spese_trasporto').Asfloat := tabella_esa_03.FieldByName('val_spese_tra').Asfloat
+    tabella_01.fieldbyname('spese_manuali').asstring := 'si';
+    tabella_01.fieldbyname('spese_manuali_trasporto').asstring := 'si';
+    tabella_01.fieldbyname('importo_spese_trasporto').asFloat := tabella_esa_03.fieldbyname('val_spese_tra').asFloat
   end;
 
-  if tabella_esa_03.FieldByName('val_spese_inc').Asfloat > 0 then
+  if tabella_esa_03.fieldbyname('val_spese_inc').asFloat > 0 then
   begin
-    tabella_01.FieldByName('spese_manuali').asstring := 'si';
-    tabella_01.FieldByName('spese_manuali_incasso').asstring := 'si';
-    tabella_01.FieldByName('importo_spese_incasso').Asfloat := tabella_esa_03.FieldByName('val_spese_inc').Asfloat;
+    tabella_01.fieldbyname('spese_manuali').asstring := 'si';
+    tabella_01.fieldbyname('spese_manuali_incasso').asstring := 'si';
+    tabella_01.fieldbyname('importo_spese_incasso').asFloat := tabella_esa_03.fieldbyname('val_spese_inc').asFloat;
   end;
-  tabella_01.FieldByName('importo_spese_extra').Asfloat := tabella_esa_03.FieldByName('val_spese_acc').Asfloat;
+  tabella_01.fieldbyname('importo_spese_extra').asFloat := tabella_esa_03.fieldbyname('val_spese_acc').asFloat;
 
-  tabella_01.FieldByName('importo_totale_imponibile').Asfloat := tabella_esa_03.FieldByName('val_tot_imp').Asfloat;
-  tabella_01.FieldByName('importo_totale_imponibile_euro').Asfloat := tabella_esa_03.FieldByName('val_tot_imp').Asfloat;
-  tabella_01.FieldByName('importo_totale_iva').Asfloat := tabella_esa_03.FieldByName('val_tot_iva').Asfloat;
-  tabella_01.FieldByName('importo_totale').Asfloat := tabella_esa_03.FieldByName('val_tot_doc').Asfloat;
-  tabella_01.FieldByName('importo_totale_euro').Asfloat := tabella_esa_03.FieldByName('val_tot_doc').Asfloat;
+  tabella_01.fieldbyname('importo_totale_imponibile').asFloat := tabella_esa_03.fieldbyname('val_tot_imp').asFloat;
+  tabella_01.fieldbyname('importo_totale_imponibile_euro').asFloat := tabella_esa_03.fieldbyname('val_tot_imp').asFloat;
+  tabella_01.fieldbyname('importo_totale_iva').asFloat := tabella_esa_03.fieldbyname('val_tot_iva').asFloat;
+  tabella_01.fieldbyname('importo_totale').asFloat := tabella_esa_03.fieldbyname('val_tot_doc').asFloat;
+  tabella_01.fieldbyname('importo_totale_euro').asFloat := tabella_esa_03.fieldbyname('val_tot_doc').asFloat;
 
   tabella_01.post;
 
@@ -4407,36 +4335,35 @@ procedure TCONVEREADY.crea_fvi;
 begin
 
   tabella_esa_03.Close;
-  tabella_esa_03.Sql.Clear;
-  tabella_esa_03.Sql.Add('SELECT * FROM VN_DOCUMENTO_IVA');
-  tabella_esa_03.Sql.Add('WHERE');
-  tabella_esa_03.Sql.Add('prg_movimento=:prg_movimento ');
-  tabella_esa_03.parameters.parambyname('prg_movimento').value := tabella_esa_01.fieldbyname('prg_movimento').asinteger;
+  tabella_esa_03.sql.clear;
+  tabella_esa_03.sql.add('SELECT * FROM VN_DOCUMENTO_IVA');
+  tabella_esa_03.sql.add('WHERE');
+  tabella_esa_03.sql.add('prg_movimento=:prg_movimento ');
+  tabella_esa_03.Parameters.ParamByName('prg_movimento').Value := tabella_esa_01.fieldbyname('prg_movimento').asInteger;
   tabella_esa_03.open;
   while not tabella_esa_03.eof do
   begin
-    if (tabella_esa_03.fieldbyname('cod_tipoomag').asstring = '') or
-      ((tabella_esa_03.fieldbyname('cod_tipoomag').asstring <> '') and (tabella_esa_03.fieldbyname('val_tot_imp').asfloat > 0)) then
+    if (tabella_esa_03.fieldbyname('cod_tipoomag').asstring = '') or ((tabella_esa_03.fieldbyname('cod_tipoomag').asstring <> '') and (tabella_esa_03.fieldbyname('val_tot_imp').asFloat > 0)) then
     begin
       try
         tabella_03.append;
 
-        tabella_03.fieldbyname('progressivo').asinteger := tabella_esa_03.fieldbyname('prg_movimento').asinteger;
+        tabella_03.fieldbyname('progressivo').asInteger := tabella_esa_03.fieldbyname('prg_movimento').asInteger;
         if tabella_esa_03.fieldbyname('cod_tipoomag').asstring <> '' then
         begin
           tabella_03.fieldbyname('tipo_movimento').asstring := 'normale';
         end;
         tabella_03.fieldbyname('tiv_codice').asstring := tabella_esa_03.fieldbyname('cod_iva').asstring;
-        tabella_03.fieldbyname('importo').asfloat := tabella_esa_03.fieldbyname('val_tot_imp').asfloat;
-        tabella_03.fieldbyname('importo_imponibile_trasporto').asfloat := tabella_esa_03.fieldbyname('val_netto_merce').asfloat + tabella_esa_03.fieldbyname('val_spese_tra').asfloat;
-        tabella_03.fieldbyname('importo_sconto_percentuale').asfloat := 0;
-        tabella_03.fieldbyname('importo_sconto').asfloat := 0;
-        tabella_03.fieldbyname('importo_sconto_cassa').asfloat := 0;
-        tabella_03.fieldbyname('importo_trasporto').asfloat := tabella_esa_03.fieldbyname('val_spese_tra').asfloat;
-        tabella_03.fieldbyname('importo_bollo').asfloat := tabella_esa_03.fieldbyname('val_bollo_ese').asfloat + tabella_esa_03.fieldbyname('val_bollo_art15').asfloat;
-        tabella_03.fieldbyname('importo_incasso').asfloat := tabella_esa_03.fieldbyname('val_spese_inc').asfloat;
-        tabella_03.fieldbyname('importo_imponibile').asfloat := tabella_esa_03.fieldbyname('val_tot_imp').asfloat;
-        tabella_03.fieldbyname('importo_iva').asfloat := tabella_esa_03.fieldbyname('val_tot_iva').asfloat;
+        tabella_03.fieldbyname('importo').asFloat := tabella_esa_03.fieldbyname('val_tot_imp').asFloat;
+        tabella_03.fieldbyname('importo_imponibile_trasporto').asFloat := tabella_esa_03.fieldbyname('val_netto_merce').asFloat + tabella_esa_03.fieldbyname('val_spese_tra').asFloat;
+        tabella_03.fieldbyname('importo_sconto_percentuale').asFloat := 0;
+        tabella_03.fieldbyname('importo_sconto').asFloat := 0;
+        tabella_03.fieldbyname('importo_sconto_cassa').asFloat := 0;
+        tabella_03.fieldbyname('importo_trasporto').asFloat := tabella_esa_03.fieldbyname('val_spese_tra').asFloat;
+        tabella_03.fieldbyname('importo_bollo').asFloat := tabella_esa_03.fieldbyname('val_bollo_ese').asFloat + tabella_esa_03.fieldbyname('val_bollo_art15').asFloat;
+        tabella_03.fieldbyname('importo_incasso').asFloat := tabella_esa_03.fieldbyname('val_spese_inc').asFloat;
+        tabella_03.fieldbyname('importo_imponibile').asFloat := tabella_esa_03.fieldbyname('val_tot_imp').asFloat;
+        tabella_03.fieldbyname('importo_iva').asFloat := tabella_esa_03.fieldbyname('val_tot_iva').asFloat;
         tabella_03.post;
       except
       end;
@@ -4459,16 +4386,14 @@ begin
     campo_codice := 'codice';
   end;
 
-  tabella_esa_02.close;
-  tabella_esa_02.parameters.parambyname('prg_movimento').value := progressivo;
+  tabella_esa_02.Close;
+  tabella_esa_02.Parameters.ParamByName('prg_movimento').Value := progressivo;
   tabella_esa_02.open;
   while not tabella_esa_02.eof do
   begin
 
     codice_articolo := trim(tabella_esa_02.fieldbyname('cod_art').asstring);
-    if (codice_articolo <> '-M') and
-      (codice_articolo <> '-D') and
-      (codice_articolo <> '') then
+    if (codice_articolo <> '-M') and (codice_articolo <> '-D') and (codice_articolo <> '') then
     begin
       esiste_articolo := true;
       if (not read_tabella(arc.arcdit, 'art', campo_codice, codice_articolo)) then
@@ -4489,17 +4414,16 @@ begin
     begin
       tabella_02.append;
 
-      tabella_02.fieldbyname('progressivo').asfloat := tabella_01.fieldbyname('progressivo').asfloat;
-      tabella_02.fieldbyname('riga').asinteger := tabella_esa_02.fieldbyname('num_riga').asinteger;
+      tabella_02.fieldbyname('progressivo').asFloat := tabella_01.fieldbyname('progressivo').asFloat;
+      tabella_02.fieldbyname('riga').asInteger := tabella_esa_02.fieldbyname('num_riga').asInteger;
 
-      if (codice_articolo = '-M') or
-        (codice_articolo = '-D') then
+      if (codice_articolo = '-M') or (codice_articolo = '-D') then
       begin
         tabella_02.fieldbyname('art_codice').asstring := '';
       end
       else if codice_articolo = '' then
       begin
-        if (tabella_esa_02.fieldbyname('qta_merce').asfloat > 0) or (tabella_esa_02.fieldbyname('prz_merce').asfloat > 0) then
+        if (tabella_esa_02.fieldbyname('qta_merce').asFloat > 0) or (tabella_esa_02.fieldbyname('prz_merce').asFloat > 0) then
         begin
           tabella_02.fieldbyname('art_codice').asstring := '000000001';
         end;
@@ -4516,10 +4440,10 @@ begin
       // tabella_02.fieldbyname('note').asstring := tabella_esa_02.fieldbyname('OR__NOTE').asstring;
       tabella_02.fieldbyname('gen_codice').asstring := tabella_esa_02.fieldbyname('cod_cpartita').asstring;
       tabella_02.fieldbyname('tiv_codice').asstring := tabella_esa_02.fieldbyname('cod_iva').asstring;
-      tabella_02.fieldbyname('quantita').asfloat := tabella_esa_02.fieldbyname('qta_merce').asfloat;
-      tabella_02.fieldbyname('prezzo').asfloat := tabella_esa_02.fieldbyname('prz_merce').asfloat;
-      tabella_02.fieldbyname('importo').asfloat := tabella_esa_02.fieldbyname('val_merce_doc').asfloat;
-      tabella_02.fieldbyname('importo_euro').asfloat := tabella_esa_02.fieldbyname('val_merce').asfloat;
+      tabella_02.fieldbyname('quantita').asFloat := tabella_esa_02.fieldbyname('qta_merce').asFloat;
+      tabella_02.fieldbyname('prezzo').asFloat := tabella_esa_02.fieldbyname('prz_merce').asFloat;
+      tabella_02.fieldbyname('importo').asFloat := tabella_esa_02.fieldbyname('val_merce_doc').asFloat;
+      tabella_02.fieldbyname('importo_euro').asFloat := tabella_esa_02.fieldbyname('val_merce').asFloat;
 
       tabella_02.fieldbyname('tma_codice').asstring := tabella_01.fieldbyname('tma_codice').asstring;
       if tabella_esa_02.fieldbyname('cod_tipoomag').asstring <> '' then
@@ -4527,10 +4451,17 @@ begin
         tabella_02.fieldbyname('tipo_movimento').asstring := 'omaggio';
       end;
 
+      if tabella_esa_02.fieldbyname('ind_stato_riga').asstring = 'E' then
+        tabella_02.fieldbyname('situazione').asstring := 'evaso'
+      else if tabella_esa_02.fieldbyname('ind_stato_riga').asstring = 'P' then
+        tabella_02.fieldbyname('situazione').asstring := 'evaso parziale'
+      else
+        tabella_02.fieldbyname('situazione').asstring := 'inserito';
+
       tabella_02.post;
     end;
 
-    tabella_esa_02.Next;
+    tabella_esa_02.next;
   end; // while
 
 end;
@@ -4538,49 +4469,42 @@ end;
 procedure TCONVEREADY.converti_ordini_fornitori;
 var
   i: integer;
-  test_serie,
-    test_numero_doc: string;
+  test_serie, test_numero_doc: string;
+  test_progressivo: integer;
 begin
   v_tabella_01.caption := 'ordini fornitori';
   application.processmessages;
 
   cancella_tabella('oat');
-  tabella_01.close;
+  tabella_01.Close;
   tabella_01.tablename := 'oat';
   tabella_01.open;
 
   cancella_tabella('oat');
-  tabella_02.close;
+  tabella_02.Close;
   tabella_02.tablename := 'oar';
   tabella_02.open;
 
-  tabella_01_ds.Dataset := tabella_01;
+  tabella_01_ds.DataSet := tabella_01;
   tabella_esa_01.Close;
-  tabella_esa_01.Sql.Clear;
-  tabella_esa_01.Sql.Add('SELECT * FROM TESTATEORDINI');
-  tabella_esa_01.Sql.Add('WHERE');
-  tabella_esa_01.Sql.Add('TIPO_RECORD_1=:TP AND TIPO_DOCUMENTO_1=:TD AND Stato_Ordine<>:SO');
-  tabella_esa_01.Sql.Add('ORDER BY Serie_documento,Numero_documento');
-  tabella_esa_01.Parameters.ParamByName('TP').Value := 'T';
-  tabella_esa_01.Parameters.ParamByName('TD').Value := 'O';
-  tabella_esa_01.Parameters.ParamByName('SO').Value := 'E';
-  tabella_esa_01.Open;
+  tabella_esa_01.sql.clear;
+  tabella_esa_01.sql.add('SELECT * FROM OR_ORDINIT T');
+  tabella_esa_01.sql.add('WHERE');
+  tabella_esa_01.sql.add('ORDER BY T.prg_ordine');
+  tabella_esa_01.open;
 
   tabella_esa_02.Close;
-  tabella_esa_02.Sql.Clear;
-  tabella_esa_02.Sql.Add('SELECT * FROM RIGHEORDINI');
-  tabella_esa_02.Sql.Add('WHERE');
-  tabella_esa_02.Sql.Add('TIPO_RECORD=:TP AND TIPO_DOCUMENTO=:TD AND Stato_riga_Ordine<>:SO');
-  tabella_esa_02.Sql.Add('ORDER BY Serie_documento_1,Numero_documento_1,Numero_riga');
-
-  tabella_esa_02.Parameters.ParamByName('TP').Value := 'R';
-  tabella_esa_02.Parameters.ParamByName('TD').Value := 'O';
-  tabella_esa_02.Parameters.ParamByName('SO').Value := 'E';
-  tabella_esa_02.Open;
+  tabella_esa_02.sql.clear;
+  tabella_esa_02.sql.add('SELECT * FROM OR_ORDINIRR');
+  tabella_esa_02.sql.add('WHERE');
+  tabella_esa_02.sql.add('R.prg_ordine=:prg_ordine');
+  tabella_esa_02.sql.add('ORDER BY R.prg_ordine_riga');
+  tabella_esa_02.open;
 
   test_data := 0;
   test_alfa := '';
   test_numero := 0;
+  test_progressivo := 0;
 
   test_serie := '';
   test_numero_doc := '';
@@ -4593,22 +4517,23 @@ begin
   begin
     crea_oat;
 
-    test_serie := tabella_esa_01.FieldByName('Serie_documento').AsString;
-    test_numero_doc := tabella_esa_01.FieldByName('Numero_documento').AsString;
+    test_serie := tabella_esa_01.fieldbyname('sig_serie_doc').asstring;
+    test_numero_doc := tabella_esa_01.fieldbyname('num_doc').asstring;
 
-    if tabella_esa_02.Locate('Serie_documento_1;Numero_documento_1', VarArrayof([test_serie, test_numero_doc]), []) then
+    test_numero := tabella_esa_01.fieldbyname('prg_ordine').asInteger;
+    if tabella_esa_02.locate('progressivo', test_progressivo, []) then
     begin
-      crea_oar(test_serie, test_numero_doc);
+      crea_oar(test_progressivo);
     end;
 
     tabella_esa_01.next;
   end;
 
-  tabella_01.close;
-  tabella_02.close;
-  tabella_03.close;
-  tabella_esa_01.close;
-  tabella_esa_02.close;
+  tabella_01.Close;
+  tabella_02.Close;
+  tabella_03.Close;
+  tabella_esa_01.Close;
+  tabella_esa_02.Close;
 
   (*
 
@@ -4660,7 +4585,7 @@ begin
     tabella_03.close;
     tabella_esa_01.close;
     tabella_esa_02.close;
-  *)
+ *)
 end;
 
 procedure TCONVEREADY.crea_oat;
@@ -4669,9 +4594,9 @@ begin
 
   tabella_01.fieldbyname('tipo_documento').asstring := 'ordine';
   tabella_01.fieldbyname('tda_codice').asstring := 'ORDA';
-  tabella_01.fieldbyname('data_documento').asdatetime := converti_data(tabella_esa_01.fieldbyname('data_ordine').asstring);
+  tabella_01.fieldbyname('data_documento').asdatetime := Converti_data(tabella_esa_01.fieldbyname('data_ordine').asstring);
   tabella_01.fieldbyname('serie_documento').asstring := tabella_esa_01.fieldbyname('serie_documento').asstring;
-  tabella_01.fieldbyname('numero_documento').asinteger := StrToInt(trim(tabella_esa_01.fieldbyname('numero_documento').asstring));
+  tabella_01.fieldbyname('numero_documento').asInteger := strtoint(trim(tabella_esa_01.fieldbyname('numero_documento').asstring));
 
   assegna_codice_frn(tabella_esa_01.fieldbyname('Cod_clifor_Contropar').asstring, cli_for);
 
@@ -4685,7 +4610,7 @@ begin
 
   tabella_01.fieldbyname('tla_codice').asstring := tabella_esa_01.fieldbyname('num_listino').asstring;
   tabella_01.fieldbyname('tva_codice').asstring := tabella_esa_01.fieldbyname('codice_valuta').asstring;
-  tabella_01.fieldbyname('cambio').asfloat := tabella_esa_01.fieldbyname('cambio').asfloat;
+  tabella_01.fieldbyname('cambio').asFloat := tabella_esa_01.fieldbyname('cambio').asFloat;
   tabella_01.fieldbyname('tpo_codice').asstring := '01';
   // tabella_01.fieldbyname('tpo_codice').asstring := tabella_esa_01.fieldbyname('orcodpor').asstring;
 
@@ -4708,7 +4633,7 @@ begin
     tabella_01.fieldbyname('tna_codice').asstring := archivio.fieldbyname('tna_codice').asstring;
     end;
     end;
-  *)
+ *)
 
   read_tabella(arc.arcdit, 'tla', 'codice', tabella_01.fieldbyname('tla_codice').asstring);
   tabella_01.fieldbyname('listino_con_iva').asstring := archivio.fieldbyname('iva_inclusa').asstring;
@@ -4727,21 +4652,17 @@ begin
 
 end;
 
-procedure TCONVEREADY.crea_oar(serie_documento, numero_documento: string);
+procedure TCONVEREADY.crea_oar(progressivo: integer);
 var
   codice_articolo: string;
 begin
 
-  while
-    not(tabella_esa_02.eof) and
-    (tabella_esa_02.FieldByName('Serie_documento_1').AsString = serie_documento) and
-    (tabella_esa_02.FieldByName('Numero_documento_1').AsString = numero_documento) do
+  while not(tabella_esa_02.eof) do
   begin
 
-    codice_Articolo := trim(tabella_esa_02.fieldbyname('Codice_Articolo').asstring);
+    codice_articolo := trim(tabella_esa_02.fieldbyname('Codice_Articolo').asstring);
 
-    if (codice_articolo <> '-M') and
-      (codice_articolo <> '-D') then
+    if (codice_articolo <> '-M') and (codice_articolo <> '-D') then
     begin
       if (not read_tabella(arc.arcdit, 'art', 'codice', codice_articolo)) then
       begin
@@ -4757,12 +4678,11 @@ begin
     begin
       tabella_02.append;
 
-      tabella_02.fieldbyname('progressivo').asfloat := tabella_01.fieldbyname('progressivo').asfloat;
+      tabella_02.fieldbyname('progressivo').asFloat := tabella_01.fieldbyname('progressivo').asFloat;
 
-      tabella_02.fieldbyname('riga').asinteger := tabella_esa_02.fieldbyname('Numero_riga').asinteger;
+      tabella_02.fieldbyname('riga').asInteger := tabella_esa_02.fieldbyname('Numero_riga').asInteger;
 
-      if (codice_articolo = '-M') or
-        (codice_articolo = '-D') then
+      if (codice_articolo = '-M') or (codice_articolo = '-D') then
       begin
         tabella_02.fieldbyname('art_codice').asstring := '';
       end
@@ -4785,9 +4705,9 @@ begin
       tabella_02.fieldbyname('gen_codice').asstring := tabella_esa_02.fieldbyname('Contropartita_Ricavo').asstring;
       tabella_02.fieldbyname('tiv_codice').asstring := tabella_esa_02.fieldbyname('Codice_Iva').asstring;
 
-      tabella_02.fieldbyname('quantita').asfloat := arrotonda(tabella_esa_02.fieldbyname('qta_movimento').asfloat);
+      tabella_02.fieldbyname('quantita').asFloat := arrotonda(tabella_esa_02.fieldbyname('qta_movimento').asFloat);
 
-      tabella_02.fieldbyname('prezzo').asfloat := tabella_esa_02.fieldbyname('Prezzo_Unitario').asfloat;
+      tabella_02.fieldbyname('prezzo').asFloat := tabella_esa_02.fieldbyname('Prezzo_Unitario').asFloat;
       (*
         if not ((tabella_esa_02.fieldbyname('orscont1').asfloat = 0) and (tabella_esa_02.fieldbyname('orscont2').asfloat = 0)) then
         begin
@@ -4805,14 +4725,14 @@ begin
         floattostr(tabella_esa_02.fieldbyname('orscont2').asfloat));
         end;
         end;
-      *)
+ *)
       calcola_importo;
       tabella_02.fieldbyname('tma_codice').asstring := tabella_01.fieldbyname('tma_codice').asstring;
 
       tabella_02.post;
     end;
 
-    tabella_esa_02.Next;
+    tabella_esa_02.next;
   end; // while
 
 end;
@@ -4822,43 +4742,34 @@ var
   tiv_codice: string;
   imponibile: double;
 begin
-  if not((tabella_02.fieldbyname('quantita').asfloat = 0) or (tabella_02.fieldbyname('prezzo').asfloat = 0)) then
+  if not((tabella_02.fieldbyname('quantita').asFloat = 0) or (tabella_02.fieldbyname('prezzo').asFloat = 0)) then
   begin
-    tabella_02.fieldbyname('importo').asfloat :=
-      arrotonda(tabella_02.fieldbyname('quantita').asfloat * tabella_02.fieldbyname('prezzo').asfloat *
-      sconto(tabella_02.fieldbyname('tsm_codice').asstring) / 100);
+    tabella_02.fieldbyname('importo').asFloat := arrotonda(tabella_02.fieldbyname('quantita').asFloat * tabella_02.fieldbyname('prezzo').asFloat * sconto(tabella_02.fieldbyname('tsm_codice').asstring) / 100);
   end;
-  tabella_02.fieldbyname('importo_euro').asfloat := arrotonda
-    (tabella_02.fieldbyname('importo').asfloat / tabella_01.fieldbyname('cambio').asfloat);
+  tabella_02.fieldbyname('importo_euro').asFloat := arrotonda(tabella_02.fieldbyname('importo').asFloat / tabella_01.fieldbyname('cambio').asFloat);
 
   tiv_codice := tabella_02.fieldbyname('tiv_codice').asstring;
   if read_tabella(arc.arcdit, 'tiv', 'codice', tabella_02.fieldbyname('tiv_codice').asstring) then
   begin
-    if tabella_01.fieldbyname('listino_con_iva').Asstring = 'no' then
+    if tabella_01.fieldbyname('listino_con_iva').asstring = 'no' then
     begin
-      tabella_02.fieldbyname('importo_iva').AsFloat :=
-        arrotonda(tabella_02.fieldbyname('importo').asfloat * archivio.fieldbyname('percentuale').asfloat / 100);
+      tabella_02.fieldbyname('importo_iva').asFloat := arrotonda(tabella_02.fieldbyname('importo').asFloat * archivio.fieldbyname('percentuale').asFloat / 100);
       read_tabella(arc.arcdit, 'tiv', 'codice', tabella_02.fieldbyname('tiv_codice').asstring);
-      tabella_02.fieldbyname('importo_iva_euro').AsFloat :=
-        arrotonda(tabella_02.fieldbyname('importo_iva').asfloat / tabella_01.fieldbyname('cambio').asfloat);
+      tabella_02.fieldbyname('importo_iva_euro').asFloat := arrotonda(tabella_02.fieldbyname('importo_iva').asFloat / tabella_01.fieldbyname('cambio').asFloat);
     end
     else
     begin
-      imponibile := arrotonda(tabella_02.fieldbyname('importo').asfloat / (1 + archivio.fieldbyname('percentuale').asfloat / 100));
-      tabella_02.fieldbyname('importo_iva').asfloat :=
-        arrotonda(tabella_02.fieldbyname('importo').asfloat - imponibile);
+      imponibile := arrotonda(tabella_02.fieldbyname('importo').asFloat / (1 + archivio.fieldbyname('percentuale').asFloat / 100));
+      tabella_02.fieldbyname('importo_iva').asFloat := arrotonda(tabella_02.fieldbyname('importo').asFloat - imponibile);
       read_tabella(arc.arcdit, 'tiv', 'codice', tabella_02.fieldbyname('tiv_codice').asstring);
-      tabella_02.fieldbyname('importo_iva_euro').AsFloat :=
-        arrotonda(tabella_02.fieldbyname('importo_iva').asfloat / tabella_01.fieldbyname('cambio').asfloat);
+      tabella_02.fieldbyname('importo_iva_euro').asFloat := arrotonda(tabella_02.fieldbyname('importo_iva').asFloat / tabella_01.fieldbyname('cambio').asFloat);
     end;
   end;
 end;
 
 procedure TCONVEREADY.assegna_codice_cli(codice_adhoc: string;
 
-  var
-  cli_for:
-  string);
+  var cli_for: string);
 begin
   codice_adhoc := trim(codice_adhoc);
   if v_codifica_clienti.checked then
@@ -4905,8 +4816,7 @@ end;
 
 procedure TCONVEREADY.assegna_codice_frn(codice_adhoc: string;
 
-  var
-  cli_for: string);
+  var cli_for: string);
 begin
   codice_adhoc := trim(codice_adhoc);
   if v_codifica_fornitori.checked then
@@ -4954,36 +4864,34 @@ end;
 
 procedure TCONVEREADY.FormClose(Sender: TObject;
 
-  var
-  Action:
-  TCloseAction);
+  var Action: TCloseAction);
 begin
   inherited;
-  adoEsatto.Connected := False;
+  ADOEsatto.Connected := false;
 end;
 
 procedure TCONVEREADY.FormShow(Sender: TObject);
 begin
   inherited;
-  adoEsatto.Connected := false;
-  adoEsatto.Connected := true;
+  ADOEsatto.Connected := false;
+  ADOEsatto.Connected := true;
 end;
 
 function TCONVEREADY.Converti_data(data: string): TDateTime;
 begin
   try
-    if Length(data) = 8 then
-      Result := StrToDate(Copy(data, 7, 2) + FormatSettings.DateSeparator + Copy(data, 5, 2) + FormatSettings.Dateseparator + Copy(data, 1, 4))
+    if length(data) = 8 then
+      Result := StrToDate(copy(data, 7, 2) + FormatSettings.DateSeparator + copy(data, 5, 2) + FormatSettings.DateSeparator + copy(data, 1, 4))
     else
       Result := StrToDate('01/01/1900');
   except
-    if Copy(data, 5, 2) <> '2' then
+    if copy(data, 5, 2) <> '2' then
     begin
-      Result := StrToDate('30' + FormatSettings.DateSeparator + Copy(data, 5, 2) + FormatSettings.Dateseparator + Copy(data, 1, 4))
+      Result := StrToDate('30' + FormatSettings.DateSeparator + copy(data, 5, 2) + FormatSettings.DateSeparator + copy(data, 1, 4))
     end
     else
     begin
-      Result := StrToDate('28' + FormatSettings.DateSeparator + Copy(data, 5, 2) + FormatSettings.Dateseparator + Copy(data, 1, 4))
+      Result := StrToDate('28' + FormatSettings.DateSeparator + copy(data, 5, 2) + FormatSettings.DateSeparator + copy(data, 1, 4))
     end;
 
   end;
@@ -4994,31 +4902,29 @@ var
   ultimo_id: integer;
 begin
   tsm.last;
-  tsm_codice := tsm.fieldbyname('id').asinteger + 1;
+  tsm_codice := tsm.fieldbyname('id').asInteger + 1;
 
   tsm.append;
   tsm.fieldbyname('codice').asstring := setta_lunghezza(tsm_codice, 4, 0);
   tsm.fieldbyname('descrizione').asstring := 'SCONTO ' + floattostr(sconto1);
   if sconto2 <> 0 then
   begin
-    tsm.fieldbyname('descrizione').asstring := tsm.fieldbyname('descrizione').asstring +
-      ' + ' + floattostr(sconto2);
+    tsm.fieldbyname('descrizione').asstring := tsm.fieldbyname('descrizione').asstring + ' + ' + floattostr(sconto2);
   end;
   tsm.fieldbyname('sconto_maggiorazione').asstring := 'sconto';
-  tsm.fieldbyname('percentuale_01').asfloat := sconto1;
-  tsm.fieldbyname('percentuale_02').asfloat := sconto2;
+  tsm.fieldbyname('percentuale_01').asFloat := sconto1;
+  tsm.fieldbyname('percentuale_02').asFloat := sconto2;
 
-  tsm.fieldbyname('percentuale_totale').asfloat := 100;
+  tsm.fieldbyname('percentuale_totale').asFloat := 100;
   if sconto2 <> 0 then
   begin
-    tsm.fieldbyname('percentuale_totale').asfloat := (100 - sconto1) *
-      (100 - sconto2) / 100;
+    tsm.fieldbyname('percentuale_totale').asFloat := (100 - sconto1) * (100 - sconto2) / 100;
   end
   else
   begin
     if sconto1 <> 0 then
     begin
-      tsm.fieldbyname('percentuale_totale').asfloat := (100 - sconto1) / 1;
+      tsm.fieldbyname('percentuale_totale').asFloat := (100 - sconto1) / 1;
     end;
   end;
 
@@ -5115,14 +5021,14 @@ begin
     tabella_03.close;
     tabella_esa_01.close;
     tabella_esa_02.close;
-  *)
+ *)
 end;
 
 procedure TCONVEREADY.cancella_tabella(tabella: string);
 begin
   query.sql.clear;
-  query.sql.Add('truncate table ' + tabella);
-  query.execsql;
+  query.sql.add('truncate table ' + tabella);
+  query.ExecSQL;
 
 end;
 
@@ -5131,18 +5037,18 @@ var
   progressivo: word;
 begin
   query.sql.clear;
-  query.sql.Add('delete from tca');
-  query.sql.Add('where codice <>''0'' ');
-  query.execsql;
+  query.sql.add('delete from tca');
+  query.sql.add('where codice <>''0'' ');
+  query.ExecSQL;
 
   tca.open;
 
-  query.close;
-  tabella_esa_02.close;
+  query.Close;
+  tabella_esa_02.Close;
   tabella_esa_02.sql.clear;
-  tabella_esa_02.sql.Add('select distinct cod_cpart_ric');
-  tabella_esa_02.sql.Add('from MG_ARTBASE');
-  tabella_esa_02.sql.Add('where cod_cpart_ric is not null');
+  tabella_esa_02.sql.add('select distinct cod_cpart_ric');
+  tabella_esa_02.sql.add('from MG_ARTBASE');
+  tabella_esa_02.sql.add('where cod_cpart_ric is not null');
   tabella_esa_02.open;
 
   while not tabella_esa_02.eof do
@@ -5166,8 +5072,8 @@ begin
     tabella_esa_02.next;
   end;
 
-  query.close;
-  tca.close;
+  query.Close;
+  tca.Close;
 end;
 
 procedure TCONVEREADY.crea_cpa;
@@ -5175,17 +5081,17 @@ var
   progressivo: word;
 begin
   query.sql.clear;
-  query.sql.Add('delete from taq');
-  query.sql.Add('where codice <>''0'' ');
-  query.execsql;
+  query.sql.add('delete from taq');
+  query.sql.add('where codice <>''0'' ');
+  query.ExecSQL;
 
   taq.open;
 
-  tabella_esa_02.close;
+  tabella_esa_02.Close;
   tabella_esa_02.sql.clear;
-  tabella_esa_02.sql.Add('select distinct cod_cpart_cos');
-  tabella_esa_02.sql.Add('from MG_ARTBASE');
-  tabella_esa_02.sql.Add('where cod_cpart_cos is not null');
+  tabella_esa_02.sql.add('select distinct cod_cpart_cos');
+  tabella_esa_02.sql.add('from MG_ARTBASE');
+  tabella_esa_02.sql.add('where cod_cpart_cos is not null');
   tabella_esa_02.open;
 
   while not tabella_esa_02.eof do
@@ -5209,22 +5115,15 @@ begin
     tabella_esa_02.next;
   end;
 
-  tabella_esa_02.close;
-  tca.close;
+  tabella_esa_02.Close;
+  tca.Close;
 end;
 
 initialization
 
-registerclass(tCONVEREADY);
+registerclass(TCONVEREADY);
 
 end.
 
-  / * * * * * * Script per comando SelectTopNRows da SSMS * * * * * * /
-  SELECT
-  cp.prg_prinota,
-  t.*
-  FROM MG_MOVMAGT t
-  left join[AZI_ENI].[dbo].CO_DOCUMENTI co on co.num_esercizio = t.num_esercizio and co.dat_doc = t.dat_doc and co.des_num_doc = t.des_num_doc
-  left join[AZI_ENI].[dbo].CO_DOCUMENTI_PN cp on cp.prg_documento = co.prg_documento
-  where
-  t.cod_gruppo_tipodoc = 'FAV'
+  / * * * * * * Script per comando SelectTopNRows da SSMS * * * * * * / SELECT cp.prg_prinota, t.* FROM MG_MOVMAGT t left join[AZI_ENI].[dbo].CO_DOCUMENTI co on co.num_esercizio = t.num_esercizio and co.dat_doc = t.dat_doc and
+  co.des_num_doc = t.des_num_doc left join[AZI_ENI].[dbo].CO_DOCUMENTI_PN cp on cp.prg_documento = co.prg_documento where t.cod_gruppo_tipodoc = 'FAV'

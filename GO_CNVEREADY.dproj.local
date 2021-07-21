@@ -4,8 +4,8 @@
     <Transaction>2015/11/30 14:40:52.000.702,=C:\GestionaleOpen\go_1000\src\GGGESDCT.pas</Transaction>
     <Transaction>2015/11/30 14:41:21.000.848,=C:\GestionaleOpen\go_1000\src\ZZDUPLICA_DITTA.pas</Transaction>
     <Transaction>2015/11/30 14:51:23.000.654,=C:\GestionaleOpen\go_1000\src\ZZACCESSO.pas</Transaction>
-    <Transaction>2015/11/30 14:51:59.000.543,C:\GestionaleOpen\go_utenti\CNVEREADY\src\CNVEREADY.dproj=C:\GestionaleOpen\go_utenti\CNVEREADY\src\CNVEREADY2dproj.dproj</Transaction>
-    <Transaction>2015/11/30 14:52:47.000.439,C:\GestionaleOpen\go_utenti\CNVEREADY\src\CNVEREADY2dproj.dproj=C:\GestionaleOpen\go_utenti\CNVEREADY\src\CNVEREADY.dproj</Transaction>
+    <Transaction>2015/11/30 14:51:59.000.543,C:\GestionaleOpen\go_utenti\CNVEREADY\src\CNVEREADY2dproj.dproj=C:\GestionaleOpen\go_utenti\CNVEREADY\src\CNVEREADY.dproj</Transaction>
+    <Transaction>2015/11/30 14:52:47.000.439,C:\GestionaleOpen\go_utenti\CNVEREADY\src\CNVEREADY.dproj=C:\GestionaleOpen\go_utenti\CNVEREADY\src\CNVEREADY2dproj.dproj</Transaction>
     <Transaction>2015/11/30 15:01:08.000.612,=C:\GestionaleOpen\go_utenti\CNVEREADY\src\GGCONVEREADY.pas</Transaction>
     <Transaction>2015/12/28 09:35:10.000.564,=C:\GestionaleOpen\go_1000\src\GGMENUCOLL.pas</Transaction>
     <Transaction>2015/12/28 09:35:49.000.476,=C:\GestionaleOpen\go_1000\src\GGSELNOMART.pas</Transaction>
@@ -18,8 +18,16 @@
     <Transaction>2020/12/22 14:46:00.000.763,=C:\GestionaleOpen\go_1010\src_1001\ZZVERSIONE_GO_EXE.rc</Transaction>
     <Transaction>2021/03/15 09:20:06.000.600,C:\GestionaleOpen\go_1010\src_1001\ZZVERSIONE_GO_EXE.rc=</Transaction>
     <Transaction>2021/03/15 09:20:21.000.381,=C:\GestionaleOpen\go_1011\src\ZZVERSIONE_GO_EXE.rc</Transaction>
-    <Transaction>2021/03/15 09:37:24.000.256,C:\GestionaleOpen\go_1011\CNVEREADY\src\GO_CNVEREADY.dproj=C:\GestionaleOpen\go_1011\CNVEREADY\src\CNVEREADY.dproj</Transaction>
-    <Transaction>2021/06/29 05:14:33.010,=C:\GestionaleOpen\go_1011\src\ZZARROTONDAMENTO.pas</Transaction>
-    <Transaction>2021/06/29 05:15:06.473,=C:\GestionaleOpen\go_1011\src\ZZVERSIONE_GO_EXE.rc</Transaction>
+    <Transaction>2021/03/15 09:37:24.000.256,C:\GestionaleOpen\go_1011\CNVEREADY\src\CNVEREADY.dproj=C:\GestionaleOpen\go_1011\CNVEREADY\src\GO_CNVEREADY.dproj</Transaction>
+    <Transaction>2021/06/29 05:14:33.000.010,=C:\GestionaleOpen\go_1011\src\ZZARROTONDAMENTO.pas</Transaction>
+    <Transaction>2021/06/29 05:15:06.000.473,=C:\GestionaleOpen\go_1011\src\ZZVERSIONE_GO_EXE.rc</Transaction>
+    <Transaction>2021/07/19 11:44:42.000.501,=C:\_gestionaleopen\go_1011\src\ZZARROTONDAMENTO.pas</Transaction>
+    <Transaction>2021/07/19 11:48:08.000.105,=C:\_gestionaleopen\go_1011\src\ZZACCESSO.pas</Transaction>
+    <Transaction>2021/07/19 13:59:14.000.272,C:\_gestionaleopen\go_utenti\GO_CNVEREADY\DMARC.dfm=C:\_gestionaleopen\go_1011\src\DMARC.dfm</Transaction>
+    <Transaction>2021/07/19 13:59:14.000.272,C:\_gestionaleopen\go_utenti\GO_CNVEREADY\DMARC.pas=C:\_gestionaleopen\go_1011\src\DMARC.pas</Transaction>
+    <Transaction>2021/07/20 06:10:30.000.974,=C:\_gestionaleopen\go_1100\src\GGFORMBASE.pas</Transaction>
+    <Transaction>2021/07/20 06:12:16.000.135,=C:\_gestionaleopen\go_1100\src\GGMAIL.pas</Transaction>
+    <Transaction>2021/07/20 15:43:06.448,=C:\_gestionaleopen\go_1100\src\GGFORMBASE.pas</Transaction>
+    <Transaction>2021/07/20 15:43:22.120,=C:\_gestionaleopen\go_1100\src\GGGESARC.pas</Transaction>
   </Transactions>
 </BorlandProject>

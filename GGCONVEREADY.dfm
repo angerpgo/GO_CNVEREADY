@@ -343,7 +343,7 @@ inherited CONVEREADY: TCONVEREADY
       'from tpc')
   end
   inherited tabella_virtuale: TVirtualTable
-    Data = {03000000000000000000}
+    Data = {04000000000000000000}
   end
   object tabella_01: TMyTable
     Connection = ARC.arcdit
